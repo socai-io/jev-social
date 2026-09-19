@@ -4,6 +4,10 @@
 
 **Jev is cool. Giving it access to your social media is cooler.**
 
+[![GitHub stars](https://img.shields.io/github/stars/socai-io/jev-social?style=flat-square&label=stars)](https://github.com/socai-io/jev-social/stargazers)
+[![release](https://img.shields.io/github/v/release/socai-io/jev-social?style=flat-square&label=release)](https://github.com/socai-io/jev-social/releases/latest)
+[![license](https://img.shields.io/github/license/socai-io/jev-social?style=flat-square&label=license)](LICENSE)
+
 Jev chooses each next operation: search, open a particular post or profile, read comments, download a TikTok video, or finish. [socai](https://github.com/socai-io/socai) executes the selected CLI command in your real Chrome. Each result goes back to Jev before the next decision.
 
 <p>
@@ -91,4 +95,4 @@ socai linkedin search "AI agents" --type content --num 10 --pretty
 
 ---
 
-If this is useful, [star socai](https://github.com/socai-io/socai) or [join the Discord](https://discord.gg/CpQdA7bwt8).
+If this is useful, [star Jev Social](https://github.com/socai-io/jev-social/stargazers). The browser runtime lives in [socai](https://github.com/socai-io/socai); you can star it too or [join the Discord](https://discord.gg/CpQdA7bwt8).
