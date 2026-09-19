@@ -5,6 +5,7 @@
 **Jev is cool. Giving it access to your social media is cooler.**
 
 [![GitHub stars](https://img.shields.io/github/stars/socai-io/jev-social?style=flat-square&label=stars)](https://github.com/socai-io/jev-social/stargazers)
+[![tests](https://github.com/socai-io/jev-social/actions/workflows/test.yml/badge.svg)](https://github.com/socai-io/jev-social/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/socai-io/jev-social?style=flat-square&label=release)](https://github.com/socai-io/jev-social/releases/latest)
 [![license](https://img.shields.io/github/license/socai-io/jev-social?style=flat-square&label=license)](LICENSE)
 
