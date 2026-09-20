@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jev Social — social research in your real browser</title>
+    <meta name="description" content="Jev chooses bounded socai CLI operations for Instagram, TikTok, and LinkedIn, streams captured evidence, and produces cited reports in a local browser UI.">
+    <meta name="theme-color" content="#ff4fc8">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Jev Social — social research in your real browser">
+    <meta property="og:description" content="TypeSafe Jev chooses. socai drives your real Chrome. Evidence streams into source-linked cards and cited reports.">
+    <meta property="og:url" content="https://socai-io.github.io/jev-social/">
+    <meta property="og:image" content="https://raw.githubusercontent.com/socai-io/jev-social/main/docs/banner.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Jev Social — social research in your real browser">
+    <meta name="twitter:description" content="Jev × socai: bounded browser operations, streamed social evidence, cited reports.">
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/socai-io/jev-social/main/docs/banner.png">
+    <link rel="canonical" href="https://socai-io.github.io/jev-social/">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="#top" aria-label="Jev Social home">
+        <span class="mark" aria-hidden="true"></span>
+        <span>JEV <b>×</b> SOCAI</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="https://socai.io/?utm_source=jev-social-pages" rel="noreferrer">Visit socai.io ↗</a>
+        <a class="star-link" href="https://github.com/socai-io/jev-social" rel="noreferrer">Star on GitHub ★</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="eyebrow">JEV × SOCAI</div>
+        <h1>Social research<br><span>in your real browser.</span></h1>
+        <p class="hero-copy">
+          Describe an Instagram, TikTok, or LinkedIn research goal. TypeSafe Jev chooses the next bounded operation; the local socai CLI executes it in Chrome; captured evidence streams into cards and a cited report.
+        </p>
+        <ul class="platforms" aria-label="Supported platforms">
+          <li><img src="./assets/platforms/instagram.png" alt="">Instagram</li>
+          <li><img src="./assets/platforms/tiktok.png" alt="">TikTok</li>
+          <li><img src="./assets/platforms/linkedin.svg" alt="">LinkedIn</li>
+        </ul>
+        <div class="hero-actions">
+          <a class="button button-dark" href="#run">Run it locally ↓</a>
+          <a class="button button-light" href="https://github.com/socai-io/jev-social" rel="noreferrer">View source ↗</a>
+        </div>
+        <p class="trust-line">Local UI · real CLI calls · no mock fallback · MIT licensed</p>
+      </section>
+
+      <section class="demo reveal" aria-labelledby="demo-heading">
+        <div class="section-label">THE DEMO</div>
+        <div class="section-heading">
+          <h2 id="demo-heading">One goal. Visible evidence.</h2>
+          <p>The recording is at 1× speed. Current builds also show every operation Jev chooses.</p>
+        </div>
+        <a class="demo-frame" href="https://github.com/socai-io/jev-social#run-it" aria-label="Open the Jev Social setup guide">
+          <img src="./assets/jev-social.gif" alt="Jev Social local demo routing a goal to socai and streaming captured post cards">
+          <span>Open the local setup guide ↗</span>
+        </a>
+      </section>
+
+      <section class="flow reveal" aria-labelledby="flow-heading">
+        <div class="section-label">THE LOOP</div>
+        <div class="section-heading compact">
+          <h2 id="flow-heading">Jev decides. socai acts.</h2>
+          <p>The model never writes shell commands or arbitrary selectors.</p>
+        </div>
+        <ol class="flow-grid">
+          <li>
+            <span class="step">01</span>
+            <h3>Route the goal</h3>
+            <p>Jev selects Instagram, TikTok, or LinkedIn from a typed choice.</p>
+          </li>
+          <li>
+            <span class="step">02</span>
+            <h3>Choose one operation</h3>
+            <p>Search, open an observed post or profile, read comments, download selected video, or finish.</p>
+          </li>
+          <li>
+            <span class="step">03</span>
+            <h3>Run the real CLI</h3>
+            <p>socai drives your existing Chrome session and returns structured evidence.</p>
+          </li>
+          <li>
+            <span class="step">04</span>
+            <h3>Stream the result</h3>
+            <p>Post cards stay visible while Jev evaluates the new state and builds the final report.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="proof reveal" aria-labelledby="proof-heading">
+        <div class="proof-copy">
+          <div class="section-label">WHY JEV FITS</div>
+          <h2 id="proof-heading">A changing decision space, not a blank check.</h2>
+          <p>Every step offers only operations supported by the installed socai CLI and only targets observed in captured results. Attempted actions disappear from the next choice set.</p>
+          <ul>
+            <li>Low-confidence and malformed decisions do not execute.</li>
+            <li>Login gates and step limits preserve honest partial results.</li>
+            <li>Sources, comments, media, and timing remain inspectable.</li>
+          </ul>
+        </div>
+        <figure class="terminal-card" aria-label="Example Jev operation loop">
+          <div class="terminal-bar"><i></i><i></i><i></i><span>jev-social</span></div>
+          <pre><code><span class="muted">goal</span>  find emerging design creators
+
+<span class="pink">jev</span>   instagram.search
+<span class="blue">socai</span> captured 4 post cards
+
+<span class="pink">jev</span>   instagram.read_post [2]
+<span class="blue">socai</span> captured caption + comments
+
+<span class="pink">jev</span>   finish
+<span class="green">done</span>  source-linked report</code></pre>
+        </figure>
+      </section>
+
+      <section class="run reveal" id="run" aria-labelledby="run-heading">
+        <div class="run-copy">
+          <div class="section-label">RUN LOCALLY</div>
+          <h2 id="run-heading">Your browser. Your session. Your evidence.</h2>
+          <p>Requires Node 20+, an OpenRouter key with Jev access, and the current socai CLI.</p>
+        </div>
+        <div class="code-block">
+          <div class="code-label">TERMINAL</div>
+          <pre><code><span>curl -fsSL https://github.com/socai-io/socai/releases/latest/download/install.sh | sh</span>
+<span>git clone https://github.com/socai-io/jev-social.git</span>
+<span>cd jev-social &amp;&amp; npm install</span>
+<span>cp .env.example .env</span>
+<span>npm start</span></code></pre>
+        </div>
+        <div class="run-actions">
+          <a class="button button-pink" href="https://github.com/socai-io/jev-social" rel="noreferrer">Star Jev Social ★</a>
+          <a class="text-link" href="https://github.com/socai-io/socai" rel="noreferrer">Explore the socai CLI ↗</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>JEV × SOCAI</span>
+      <p>Fast typed decisions meet real social browser evidence.</p>
+      <div>
+        <a href="https://typesafe.ai/" rel="noreferrer">TypeSafe</a>
+        <a href="https://socai.io/" rel="noreferrer">socai</a>
+        <a href="https://github.com/socai-io/jev-social" rel="noreferrer">GitHub</a>
+      </div>
+    </footer>
+  </body>
+</html>
