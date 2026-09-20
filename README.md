@@ -66,8 +66,19 @@ The run stores each choice, confidence, command, observed result summary, and el
 
 Node 20+, an OpenRouter key with Jev access, and a current [socai](https://github.com/socai-io/socai) CLI.
 
+Fastest path — no repository clone required. Onboarding prompts for the key and offers to install the official socai CLI when it is missing:
+
+```bash
+npx --yes github:socai-io/jev-social onboard
+npx --yes github:socai-io/jev-social
+```
+
+To work from a source checkout instead:
+
 ```bash
 curl -fsSL https://github.com/socai-io/socai/releases/latest/download/install.sh | sh
+git clone https://github.com/socai-io/jev-social.git
+cd jev-social
 npm install
 cp .env.example .env   # OPENROUTER_API_KEY=…
 npm start

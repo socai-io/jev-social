@@ -141,15 +141,12 @@
         <div class="run-copy">
           <div class="section-label">RUN LOCALLY</div>
           <h2 id="run-heading">Your browser. Your session. Your evidence.</h2>
-          <p>Requires Node 20+, an OpenRouter key with Jev access, and the current socai CLI.</p>
+          <p>Requires Node 20+ and an OpenRouter key with Jev access. Onboarding offers to install the current socai CLI when it is missing.</p>
         </div>
         <div class="code-block">
           <div class="code-label">TERMINAL</div>
-          <pre><code><span>curl -fsSL https://github.com/socai-io/socai/releases/latest/download/install.sh | sh</span>
-<span>git clone https://github.com/socai-io/jev-social.git</span>
-<span>cd jev-social &amp;&amp; npm install</span>
-<span>cp .env.example .env</span>
-<span>npm start</span></code></pre>
+          <pre><code><span>npx --yes github:socai-io/jev-social onboard</span>
+<span>npx --yes github:socai-io/jev-social</span></code></pre>
         </div>
         <div class="run-actions">
           <a class="button button-pink" href="https://github.com/socai-io/jev-social" rel="noreferrer">Star Jev Social ★</a>
