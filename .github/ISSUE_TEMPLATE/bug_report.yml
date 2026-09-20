@@ -1,0 +1,71 @@
+name: Bug report
+description: Report reproducible behavior in Jev Social
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a bug. Remove keys, cookies, personal data, and captured private content before posting.
+  - type: input
+    id: version
+    attributes:
+      label: Jev Social version
+      placeholder: v0.1.0 or commit SHA
+    validations:
+      required: true
+  - type: input
+    id: socai
+    attributes:
+      label: socai version
+      placeholder: Output of socai --version
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Instagram
+        - TikTok
+        - LinkedIn
+        - Auto routing / multiple platforms
+        - Local UI or server
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include the goal and commands, but redact private queries and URLs.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include concise logs or screenshots. Do not paste raw captured social data.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: macOS 15, Node 20, Chrome 140
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed credentials, cookies, personal data, and private captured content.
+          required: true
+        - label: This is not a security vulnerability; I will use private vulnerability reporting for security issues.
+          required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Usage questions and community help
+    url: https://discord.gg/CpQdA7bwt8
+    about: Ask setup and usage questions in the socai Discord.
+  - name: Security vulnerability
+    url: https://github.com/socai-io/jev-social/security/advisories/new
+    about: Report security issues privately.

@@ -1,0 +1,34 @@
+name: Feature request
+description: Propose a focused improvement to Jev Social
+title: "feature: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Research problem
+      description: What social-research workflow is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Explain the user-visible result and where Jev or socai should fit.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Example or evidence
+      description: Add a redacted example, mockup, or relevant socai command if available.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This keeps browser execution inside the socai CLI.
+          required: true
+        - label: This does not require exposing API keys, cookies, or private social data.
+          required: true
