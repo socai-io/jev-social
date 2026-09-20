@@ -4,14 +4,21 @@
   "description": "Jev-directed Instagram, TikTok, and LinkedIn browser operations through the socai CLI",
   "type": "module",
   "bin": {
-    "jev-social": "./bin/jev-social.js"
+    "jev-social": "bin/jev-social.js"
   },
   "exports": {
     ".": "./src/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/socai-io/jev-social.git"
+  },
+  "homepage": "https://socai-io.github.io/jev-social/",
+  "bugs": {
+    "url": "https://github.com/socai-io/jev-social/issues"
+  },
   "files": [
     "bin",
-    "docs",
     "public",
     "src",
     "README.md",
@@ -32,7 +39,15 @@
     "instagram",
     "tiktok",
     "linkedin",
-    "research"
+    "research",
+    "ai-agent",
+    "browser-automation",
+    "openrouter",
+    "social-media-research"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

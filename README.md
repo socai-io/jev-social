@@ -1,4 +1,4 @@
-<img src="docs/banner.png" alt="Jev × socai" width="100%" />
+<img src="https://raw.githubusercontent.com/socai-io/jev-social/main/docs/banner.png" alt="Jev × socai" width="100%" />
 
 # Jev for social media
 
@@ -12,16 +12,16 @@
 Jev chooses each next operation: search, open a particular post or profile, read comments, download a TikTok video, or finish. [socai](https://github.com/socai-io/socai) executes the selected CLI command in your real Chrome. Each result goes back to Jev before the next decision.
 
 <p>
-  <img src="docs/platforms/instagram.png" height="32" alt="Instagram">
+  <img src="https://raw.githubusercontent.com/socai-io/jev-social/main/docs/platforms/instagram.png" height="32" alt="Instagram">
   &nbsp;&nbsp;
-  <img src="docs/platforms/tiktok.png" height="32" alt="TikTok">
+  <img src="https://raw.githubusercontent.com/socai-io/jev-social/main/docs/platforms/tiktok.png" height="32" alt="TikTok">
   &nbsp;&nbsp;
-  <img src="docs/platforms/linkedin.svg" height="32" alt="LinkedIn">
+  <img src="https://raw.githubusercontent.com/socai-io/jev-social/main/docs/platforms/linkedin.svg" height="32" alt="LinkedIn">
 </p>
 
 [Live site](https://socai-io.github.io/jev-social/) · [socai](https://github.com/socai-io/socai) · [Discord](https://discord.gg/CpQdA7bwt8) · [Jev](https://typesafe.ai/)
 
-![Earlier routing-only demo](docs/jev-social.gif)
+![Earlier routing-only demo](https://raw.githubusercontent.com/socai-io/jev-social/main/docs/jev-social.gif)
 
 The recording above shows the earlier routing-only prototype. Current runs include a history of every operation chosen by Jev.
 
