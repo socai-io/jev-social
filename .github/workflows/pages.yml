@@ -33,7 +33,7 @@ jobs:
       - name: Assemble the static site
         run: |
           mkdir -p _site/assets/platforms
-          cp site/index.html site/styles.css site/favicon.svg _site/
+          cp site/index.html site/styles.css site/favicon.svg site/robots.txt site/sitemap.xml _site/
           cp docs/banner.png docs/jev-social.gif _site/assets/
           cp docs/platforms/instagram.png docs/platforms/tiktok.png docs/platforms/linkedin.svg _site/assets/platforms/
           touch _site/.nojekyll

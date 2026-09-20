@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://socai-io.github.io/jev-social/sitemap.xml
