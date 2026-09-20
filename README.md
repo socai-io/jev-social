@@ -19,7 +19,7 @@ Jev chooses each next operation: search, open a particular post or profile, read
   <img src="https://raw.githubusercontent.com/socai-io/jev-social/main/docs/platforms/linkedin.svg" height="32" alt="LinkedIn">
 </p>
 
-[Live site](https://socai-io.github.io/jev-social/) · [socai](https://github.com/socai-io/socai) · [Discord](https://discord.gg/CpQdA7bwt8) · [Jev](https://typesafe.ai/)
+[Live site](https://socai-io.github.io/jev-social/) · [Product story](https://socai.io/blog/jev-social-media-automation/) · [socai](https://github.com/socai-io/socai) · [Discord](https://discord.gg/CpQdA7bwt8) · [Jev](https://typesafe.ai/)
 
 ![Earlier routing-only demo](https://raw.githubusercontent.com/socai-io/jev-social/main/docs/jev-social.gif)
 
