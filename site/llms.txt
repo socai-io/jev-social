@@ -24,7 +24,7 @@ Recorded output example: https://github.com/socai-io/jev-social/blob/main/docs/e
 ## Supported operations
 
 - Instagram: search, inspect a profile, inspect an observed post or reel, read comments, inspect page state
-- TikTok: search, inspect an author, inspect an observed video and comments, download the selected video's media, inspect page state
+- TikTok: search, inspect an author, inspect an observed video and comments, download selected media only when explicitly requested, inspect page state
 - LinkedIn: search people, content, or companies; inspect an observed profile, company, post, experience, or education; inspect page state
 
 ## Interfaces
@@ -40,14 +40,28 @@ The HTTP server listens on `127.0.0.1`. State-changing requests require exact sa
 Requirements: Node.js 20+, an OpenRouter API key with Jev access, a current socai CLI, and a Chrome session that can access the selected platform.
 
 ```bash
-npx --yes github:socai-io/jev-social onboard
-npx --yes github:socai-io/jev-social
+npx github:socai-io/jev-social#v0.1.4 onboard
+npx github:socai-io/jev-social#v0.1.4
 ```
 
 Direct non-interactive example:
 
 ```bash
-OPENROUTER_API_KEY=your_key npx --yes github:socai-io/jev-social search "find emerging design creators on Instagram" --platform auto --limit 4
+npx github:socai-io/jev-social#v0.1.4 search "find emerging design creators on Instagram" --platform auto --limit 4
+```
+
+## Install as an Agent Skill
+
+GitHub CLI 2.101 or newer can install the immutable v0.1.4 skill for Codex:
+
+```bash
+gh skill install socai-io/jev-social jev-social@v0.1.4 --agent codex --scope user
+```
+
+The cross-agent Skills CLI is also supported:
+
+```bash
+npx skills add socai-io/jev-social --skill jev-social
 ```
 
 ## Runtime boundaries

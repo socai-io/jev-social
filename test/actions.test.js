@@ -17,6 +17,17 @@ test('actions accept only observed social targets and known CLI operations', () 
   assert.ok(!availableActions({...base,commands:['search']}).some(x=>x.kind==='page_state'));
 });
 
+test('TikTok media downloads require explicit user intent', () => {
+  const tiktok={platform:'tiktok',query:'handmade art',goal:'research handmade art on TikTok',items:[{url:'https://www.tiktok.com/@demo/video/222',title:'Handmade art'}],history:[],commands:['search','get-videos','author','page_state'],limit:4};
+  assert.ok(!availableActions(tiktok).some(x=>x.downloadMedia));
+  assert.ok(!availableActions({...tiktok,goal:'capture evidence from video'}).some(x=>x.downloadMedia));
+  assert.ok(!availableActions({...tiktok,goal:'save notes about this video'}).some(x=>x.downloadMedia));
+  assert.ok(!availableActions({...tiktok,goal:'download comments from this video'}).some(x=>x.downloadMedia));
+  assert.ok(availableActions({...tiktok,goal:'find and download the selected TikTok video'}).some(x=>x.downloadMedia));
+  assert.ok(availableActions({...tiktok,goal:'record the selected video for offline analysis'}).some(x=>x.downloadMedia));
+  assert.ok(availableActions({...tiktok,goal:'下载并保存选中的 TikTok 视频'}).some(x=>x.downloadMedia));
+});
+
 test('Instagram aliases merge detail and comments into the existing card', () => {
   assert.equal(sourceUrl('https://www.instagram.com/reel/demo/?x=1','instagram'),'https://www.instagram.com/p/demo/');
   const action={platform:'instagram',kind:'read_post',target:'https://www.instagram.com/p/demo/'};

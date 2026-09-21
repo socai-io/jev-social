@@ -97,14 +97,27 @@ test("Jev opens a profile then selects a newly observed post", async () => {
   } finally { await rm(directory,{recursive:true,force:true}); }
 });
 
-test("runSearch downloads only the TikTok video selected by Jev", async () => {
+test("generic TikTok research reads video details without downloading media", async () => {
   const { directory, env } = await fixture();
-  const client = choices('tiktok', (criteria, step) => step === 0 ? matching(criteria,/^Search tiktok/) : step === 1 ? matching(criteria,/download its media.*\/222/) : 'finish');
+  const client = choices('tiktok', (criteria, step) => step === 0 ? matching(criteria,/^Search tiktok/) : step === 1 ? matching(criteria,/Open this post.*\/222/) : 'finish');
   try {
     const run = await runSearch({query:'find handmade art on TikTok'}, {env,client});
     assert.equal(run.socaiOutputs.length,2);
+    assert.match(run.command,/get-videos --video 'https:\/\/www.tiktok.com\/@demo\/video\/222' --num-comments 8 --pretty/);
+    assert.ok(!run.command.includes('--download-media'));
+    assert.ok(!run.actions[1].action.downloadMedia);
+  } finally { await rm(directory,{recursive:true,force:true}); }
+});
+
+test("runSearch downloads only the TikTok video selected by Jev after an explicit request", async () => {
+  const { directory, env } = await fixture();
+  const client = choices('tiktok', (criteria, step) => step === 0 ? matching(criteria,/^Search tiktok/) : step === 1 ? matching(criteria,/download its media.*\/222/) : 'finish');
+  try {
+    const run = await runSearch({query:'find and download a handmade art video on TikTok'}, {env,client});
+    assert.equal(run.socaiOutputs.length,2);
     assert.match(run.command,/get-videos --video 'https:\/\/www.tiktok.com\/@demo\/video\/222' --num-comments 8 --download-media/);
     assert.ok(!run.command.includes('/111'));
+    assert.equal(run.actions[1].action.downloadMedia,true);
     assert.equal(run.result.items.find((item)=>item.url.endsWith('/222')).video.local_path,'/tmp/video.mp4');
   } finally { await rm(directory,{recursive:true,force:true}); }
 });

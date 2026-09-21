@@ -1,6 +1,7 @@
 ---
 name: jev-social
 description: Run browser-grounded, read-only social research through Jev Social when a user wants posts, profiles, comments, video evidence, or a source-linked report from Instagram, TikTok, or LinkedIn and the local socai CLI reports support for that platform. Do not use for publishing, engagement actions, or general web research.
+license: MIT
 metadata:
   author: socai-io
   category: Research
@@ -11,20 +12,31 @@ metadata:
 
 Use the released Jev Social CLI as the execution boundary. Jev selects from bounded operations, socai performs those operations in the local Chrome session, and the command returns captured evidence plus an explicit run status.
 
+## Requirements and costs
+
+- Node.js 20 or newer.
+- A user-provided OpenRouter API key with access to Jev. Jev decisions call OpenRouter and may incur provider charges.
+- A locally installed socai CLI with support for the requested platform.
+- A signed-in local browser session when Instagram, TikTok, or LinkedIn requires one.
+
+Do not install software, start onboarding, change browser profiles, or request credentials unless the user asked for setup. Never ask the user to paste an API key into chat.
+
 ## Check readiness
 
 Run this before research:
 
 ```bash
-npx --yes github:socai-io/jev-social#v0.1.2 status
+npx github:socai-io/jev-social#05581cac6b8c21c85e54883b5f2b93c16f40f419 status
 ```
+
+The commit is the tested runtime source included in release `v0.1.4`. Do not add an automatic-consent flag. If the package runner needs to download the source, identify `socai-io/jev-social` and the pinned commit to the user, then continue only after the user approves that download.
 
 Require a configured Jev key, an installed socai CLI, and support for the requested platform. Treat the status payload as local diagnostics: do not reproduce configuration paths, executable paths, environment values, or credentials in the answer.
 
 If setup is missing, identify the exact missing prerequisite. Run interactive onboarding or install software only when the user requested setup or authorized installation:
 
 ```bash
-npx --yes github:socai-io/jev-social#v0.1.2 onboard
+npx github:socai-io/jev-social#05581cac6b8c21c85e54883b5f2b93c16f40f419 onboard
 ```
 
 Never place an API key in a shell command, transcript, report, or committed file.
@@ -34,7 +46,7 @@ Never place an API key in a shell command, transcript, report, or committed file
 Use the platform named by the user. Otherwise leave routing to Jev with `auto`. Keep the natural-language goal intact; it can include desired evidence, target counts, and stopping conditions.
 
 ```bash
-npx --yes github:socai-io/jev-social#v0.1.2 search "<research goal>" \
+npx github:socai-io/jev-social#05581cac6b8c21c85e54883b5f2b93c16f40f419 search "<research goal>" \
   --platform <auto|instagram|tiktok|linkedin> \
   --limit 4 \
   --max-steps 12
@@ -68,7 +80,7 @@ Lead with the outcome, then present the useful records in a compact table or sho
 When the user asks for an interactive preview instead of a terminal run, start the loopback UI with:
 
 ```bash
-npx --yes github:socai-io/jev-social#v0.1.2 serve --port 8766
+npx github:socai-io/jev-social#05581cac6b8c21c85e54883b5f2b93c16f40f419 serve --port 8766
 ```
 
 Report `http://127.0.0.1:8766` and leave the process running only when the user asked for a local demo server.

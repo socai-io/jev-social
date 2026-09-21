@@ -44,6 +44,21 @@ export function targetKind(raw, platform) {
   return null;
 }
 
+export function mediaDownloadRequested(goal) {
+  const text = String(goal || "");
+  const excludesMediaIntent = /\b(?:comments?|captions?|metadata|notes?|evidence|reports?|transcripts?|thumbnails?|details?|results?|links?|urls?|discussions?)\b/i;
+  const excludesChineseMediaIntent = /(?:评论|字幕|元数据|笔记|证据|报告|文字|链接|封面|讨论)/;
+  const hasUnblockedMatch = (pattern, excluded) => [...text.matchAll(pattern)]
+    .some((match) => !excluded.test(match.groups?.between || ""));
+
+  return hasUnblockedMatch(/\b(?:download|save|archive|grab)\b(?<between>[\s\S]{0,48}?)\b(?:videos?|media|clips?|files?)\b/gi, excludesMediaIntent)
+    || hasUnblockedMatch(/\b(?:videos?|media|clips?|files?)\b(?<between>[\s\S]{0,48}?)\b(?:download|save|archive|grab)\b/gi, excludesMediaIntent)
+    || /\b(?:capture|record)\s+(?:(?:the|a|an|this|that|selected|its|their|your)\s+){0,2}(?:videos?|media|clips?)\b/i.test(text)
+    || /\b(?:local|offline)\s+copy\s+(?:(?:of|the|a|this|that|selected|chosen)\s+){0,4}(?:videos?|media|clips?|files?)\b/i.test(text)
+    || hasUnblockedMatch(/(?:下载|保存|留存|归档|抓取)(?<between>.{0,16}?)(?:视频|媒体|文件)/g, excludesChineseMediaIntent)
+    || hasUnblockedMatch(/(?:视频|媒体|文件)(?<between>.{0,16}?)(?:下载|保存|留存|归档|抓取)/g, excludesChineseMediaIntent);
+}
+
 export function buildActionArgs(action) {
   const { platform, kind, target, query, resultType, limit = 4, downloadMedia = false } = action;
   if (!DOMAINS[platform]) throw new AppError("Unsupported action platform.", { code: "INVALID_ACTION" });
@@ -85,6 +100,7 @@ export function buildActionArgs(action) {
 
 export function availableActions({ platform, query, goal, items, history, commands, limit }) {
   const actions = [];
+  const allowMediaDownload = platform === "tiktok" && mediaDownloadRequested(goal);
   const attempted = new Set(history.map((step) => step.action.id));
   const add = (kind, label, fields = {}) => {
     const action = { platform, kind, label, limit, ...fields };
@@ -121,7 +137,7 @@ export function availableActions({ platform, query, goal, items, history, comman
       const read = history.some((step) => step.action.kind === "read_post" && step.action.target === target);
       if (!read) {
         add("read_post", `Open this post and read its comments: ${target} ${detail}`, { target });
-        if (platform === "tiktok") add("read_post", `Open this video, read comments, and download its media: ${target} ${detail}`, { target, downloadMedia: true });
+        if (allowMediaDownload) add("read_post", `Open this video, read comments, and download its media: ${target} ${detail}`, { target, downloadMedia: true });
       }
     }
     if (type === "profile") {
@@ -164,7 +180,7 @@ export async function chooseAction({ goal, platform, actions, history, items, li
             "Start with the literal search or an explicit URL. On LinkedIn choose people, content, or companies to match the goal.",
             "Read the most relevant posts and their comments before finishing; search cards alone are not detailed evidence.",
             "Open a promising profile when search results are profiles instead of posts, or when the goal is creator discovery.",
-            "Download TikTok video when requested or useful to inspect the goal; do not download unrelated videos.",
+            "Offer a TikTok media-download action only when the user's goal explicitly asks to download, save, archive, capture, record, or keep an offline copy of media.",
             "Do not repeat failed operations or evade login, CAPTCHA, or access gates. Finish when blocked or when enough relevant evidence is collected.",
             "An explicit count or stopping condition in the user's request takes priority over target_count. Otherwise aim for target_count useful records. Finish when the goal is met; do not exhaust the budget just to use every action.",
           ],
