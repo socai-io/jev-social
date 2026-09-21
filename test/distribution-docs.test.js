@@ -33,3 +33,12 @@ test("machine-readable setup avoids command-line credentials and exposes the Age
     new RegExp(`gh skill install socai-io/jev-social jev-social@v${packageJson.version}\\b`),
   );
 });
+
+test("the Pages artifact retains the .nojekyll marker", async () => {
+  const workflow = await readFile(new URL("../.github/workflows/pages.yml", import.meta.url), "utf8");
+  assert.match(workflow, /touch _site\/\.nojekyll/);
+  assert.match(
+    workflow,
+    /actions\/upload-pages-artifact@[^\n]+# v5\.0\.0[\s\S]*?with:\n\s+path: _site\n\s+include-hidden-files: true/,
+  );
+});
