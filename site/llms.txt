@@ -40,22 +40,22 @@ The HTTP server listens on `127.0.0.1`. State-changing requests require exact sa
 Requirements: Node.js 20+, an OpenRouter API key with Jev access, a current socai CLI, and a Chrome session that can access the selected platform.
 
 ```bash
-npx github:socai-io/jev-social#v0.1.4 onboard
-npx github:socai-io/jev-social#v0.1.4
+npx github:socai-io/jev-social#v0.1.5 onboard
+npx github:socai-io/jev-social#v0.1.5
 ```
 
 Direct non-interactive example:
 
 ```bash
-npx github:socai-io/jev-social#v0.1.4 search "find emerging design creators on Instagram" --platform auto --limit 4
+npx github:socai-io/jev-social#v0.1.5 search "find emerging design creators on Instagram" --platform auto --limit 4
 ```
 
 ## Install as an Agent Skill
 
-GitHub CLI 2.101 or newer can install the immutable v0.1.4 skill for Codex:
+GitHub CLI 2.101 or newer can install the immutable v0.1.5 skill for Codex:
 
 ```bash
-gh skill install socai-io/jev-social jev-social@v0.1.4 --agent codex --scope user
+gh skill install socai-io/jev-social jev-social@v0.1.5 --agent codex --scope user
 ```
 
 The cross-agent Skills CLI is also supported:

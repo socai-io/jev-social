@@ -79,14 +79,14 @@ Node 20+, an OpenRouter key with Jev access, and a current [socai](https://githu
 Fastest path — no repository clone required. Onboarding prompts for the key and offers to install the official socai CLI when it is missing:
 
 ```bash
-npx github:socai-io/jev-social#v0.1.4 onboard
-npx github:socai-io/jev-social#v0.1.4
+npx github:socai-io/jev-social#v0.1.5 onboard
+npx github:socai-io/jev-social#v0.1.5
 ```
 
 To let Codex invoke the same browser-grounded workflow through GitHub CLI 2.101 or newer:
 
 ```bash
-gh skill install socai-io/jev-social jev-social@v0.1.4 --agent codex --scope user
+gh skill install socai-io/jev-social jev-social@v0.1.5 --agent codex --scope user
 ```
 
 Or install it with the cross-agent Skills CLI:

@@ -1,6 +1,6 @@
 {
   "name": "jev-social",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Jev-directed Instagram, TikTok, and LinkedIn browser operations through the socai CLI",
   "type": "module",
   "bin": {
