@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -30,6 +30,8 @@ else if (command === 'search') {
   ]});
 } else if (command === 'get-posts') {
   console.error('run_dir: /tmp/private/run');
+  console.error('cannot open /opt/company/private/config.json; retrying safely');
+  console.error('artifact_path=/tmp/private/report.md but upload failed');
   result({ok:true,posts:[{ok:true,url:args[3],entity:{caption:'A handmade bowl stored at /tmp/private/raw.json',thumbnail_url:'https://cdn.example/art.jpg',local_path:'/tmp/private/post.json',stdout:'raw private output',cookies:[{name:'sid',value:'secret-cookie'}],dom:'<html>private DOM</html>'},comments:[{text:'Love the glaze'}]}]});
 } else if (command === 'get-videos') {
   result({ok:true,videos:[{ok:true,locator:args[3],entity:{url:args[3],title:'Selected video',video:args.includes('--download-media')?{local_path:'/tmp/video.mp4'}:{}}}]});
@@ -78,7 +80,10 @@ test("runSearch lets Jev choose a specific post, then finish without an autonomo
     assert.ok(!run.evidenceCommands.some((command) => /research|\/first\//.test(command)));
     assert.match(run.report, /Love the glaze/);
     assert.ok(events.some((event) => event.stage === 'planning'));
+    assert.ok(events.some((event) => event.message === 'cannot open [path]; retrying safely'));
+    assert.ok(events.some((event) => event.message === 'artifact_path=[path] but upload failed'));
     assert.ok(!JSON.stringify(events).includes('/tmp/private'));
+    assert.ok(!JSON.stringify(events).includes('/opt/company'));
     assert.ok(!run.result.items.some((item) => item.url.includes('evil.example')));
   } finally { await rm(directory,{recursive:true,force:true}); }
 });
@@ -155,6 +160,137 @@ test("an invented action never reaches the CLI", async () => {
   try {
     await assert.rejects(runSearch({query:'find art on Instagram'},{env,client:choices('instagram',()=> 'run_shell')}),{code:'INVALID_JEV_RESPONSE'});
   } finally { await rm(directory,{recursive:true,force:true}); }
+});
+
+test("requesting explicit unsupported platform fails with SOCAI_CAPABILITY_MISSING before any model call", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-missing-plat-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  await writeFile(
+    mock,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "--version") console.log("socai 0.5.6");
+else if (args[0] === "--help") console.log("socai root");
+else if (args[0] === "instagram" && args[1] === "--help") console.log("Commands: search");
+else if (args[0] === "tiktok" && args[1] === "--help") console.log("Commands: search");
+else if (args[0] === "linkedin" && args[1] === "--help") process.exitCode = 1;
+else process.exitCode = 2;
+`,
+    { mode: 0o755 },
+  );
+
+  const env = { ...process.env, SOCAI_BIN: mock, JEV_SOCIAL_HOME: directory };
+  let modelCallCount = 0;
+  const client = {
+    async systemOne() {
+      modelCallCount += 1;
+      return { answers: { route: { type: "choice", choice: "linkedin_search", confidence: 0.9 } } };
+    },
+  };
+
+  try {
+    await assert.rejects(
+      runSearch({ query: "find AI PMs", platform: "linkedin" }, { env, client }),
+      (error) => {
+        assert.equal(error.code, "SOCAI_CAPABILITY_MISSING");
+        assert.equal(error.details?.platform, "linkedin");
+        assert.ok(!JSON.stringify(error).includes(directory));
+        return true;
+      },
+    );
+    assert.equal(modelCallCount, 0, "No model calls should be made for explicitly unsupported platform");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("auto-routing never offers an unavailable platform to Jev classifier", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-autoroute-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  await writeFile(
+    mock,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "--version") console.log("socai 0.5.6");
+else if (args[0] === "--help") console.log("socai root");
+else if (args[0] === "instagram" && args[1] === "--help") console.log("Commands: search");
+else if (args[0] === "tiktok" && args[1] === "--help") console.log("Commands: search");
+else if (args[0] === "linkedin" && args[1] === "--help") process.exitCode = 1;
+else if (args[0] === "instagram" && args[1] === "search") {
+  console.log(JSON.stringify({ ok: true, results: [{ url: "https://instagram.com/p/123", title: "Instagram art" }] }));
+}
+else process.exitCode = 2;
+`,
+    { mode: 0o755 },
+  );
+
+  const env = { ...process.env, SOCAI_BIN: mock, JEV_SOCIAL_HOME: directory };
+  let capturedRequest;
+  const client = {
+    async systemOne(request) {
+      if (request.questions.route) {
+        capturedRequest = request;
+        return {
+          answers: {
+            route: { type: "choice", choice: "instagram_search", confidence: 0.95 },
+          },
+        };
+      }
+      const criteria = request.questions.action?.criteria || {};
+      const choice = Object.keys(criteria).find((k) => k === "finish") || Object.keys(criteria)[0];
+      return {
+        answers: {
+          action: { type: "choice", choice, confidence: 0.99 },
+        },
+      };
+    },
+  };
+
+  try {
+    const run = await runSearch({ query: "find creatives", platform: "auto" }, { env, client });
+    assert.equal(run.platform, "instagram");
+    assert.ok(capturedRequest, "Classifier should be invoked for auto routing");
+    assert.deepEqual(
+      capturedRequest.state.supported_workflows,
+      [
+        "Read-only Instagram search via the socai CLI",
+        "Read-only TikTok search via the socai CLI",
+      ],
+      "LinkedIn workflow must not be offered when unavailable",
+    );
+    assert.equal(capturedRequest.questions.route.criteria.linkedin_search, undefined);
+    assert.ok(capturedRequest.questions.route.criteria.instagram_search);
+    assert.ok(capturedRequest.questions.route.criteria.tiktok_search);
+    assert.ok(capturedRequest.questions.route.criteria.unsupported);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("runSearch aborts promptly when cancelled during preflight probe", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-abort-search-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  await writeFile(
+    mock,
+    `#!/usr/bin/env node
+setTimeout(() => {}, 30_000);
+`,
+    { mode: 0o755 },
+  );
+  await chmod(mock, 0o755);
+
+  const env = { ...process.env, SOCAI_BIN: mock, JEV_SOCIAL_HOME: directory };
+  try {
+    const controller = new AbortController();
+    const searchPromise = runSearch({ query: "art", platform: "instagram" }, { env, signal: controller.signal });
+    setTimeout(() => controller.abort(), 50);
+
+    await assert.rejects(searchPromise, (err) => {
+      return err.code === "SOCAI_ABORTED" || err.name === "AbortError";
+    });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("an interrupted run checkpoints completed actions and public evidence", async () => {

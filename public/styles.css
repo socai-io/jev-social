@@ -49,6 +49,7 @@ h1 em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px var(-
 .composer { border: 1.5px solid var(--ink); background: #fff; box-shadow: 7px 7px 0 rgba(255, 46, 166, .72); }
 .composer textarea { display: block; width: 100%; min-height: 112px; resize: vertical; padding: 18px; border: 0; outline: 0; background: #fff; font-size: 16px; line-height: 1.55; }
 .composer textarea::placeholder { color: #9ba0aa; }
+.platform-notice { margin: 0; padding: 8px 18px; border-top: 1px solid var(--line); background: var(--ice); color: var(--ink); font: 500 11px/1.4 var(--mono); }
 .composer-controls { min-height: 64px; display: flex; align-items: end; gap: 11px; padding: 10px; border-top: 1px solid var(--line); background: #f3f8fc; }
 .field-group { display: grid; gap: 5px; }
 .field-group > span { font: 700 8px var(--mono); letter-spacing: .12em; }
@@ -69,6 +70,7 @@ h1 em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px var(-
 .prompt-example-btn:hover { border-color: var(--ink); transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--ink); }
 .prompt-example-btn:active { transform: translate(0, 0); box-shadow: 1px 1px 0 var(--ink); }
 .prompt-example-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 3px var(--pink); }
+.prompt-example-btn:disabled, .prompt-example-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; pointer-events: none; border-color: var(--line) !important; transform: none !important; box-shadow: none !important; }
 .prompt-example-btn .prompt-platform { color: var(--pink); font: 700 9px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
 .prompt-example-btn .prompt-text { color: var(--ink); }
 

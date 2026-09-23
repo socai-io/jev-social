@@ -22,3 +22,21 @@ test("environment-only OpenRouter keys are not persisted during onboarding", asy
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("saveOnboarding reports the resolved socai bin path for CLI output", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-onboard-bin-"));
+  const mockBin = path.join(directory, "mock-socai.mjs");
+  const env = {
+    ...process.env,
+    JEV_SOCIAL_HOME: directory,
+    OPENROUTER_API_KEY: "test-key",
+    SOCAI_BIN: mockBin,
+  };
+  try {
+    const result = await saveOnboarding({ verify: false, persistApiKey: true, socaiBin: mockBin, env });
+    assert.equal(result.socai.bin, mockBin, "socai.bin must be present in saveOnboarding result for CLI callers");
+    assert.notEqual(result.socai.bin, undefined);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

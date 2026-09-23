@@ -22,6 +22,7 @@ const STATIC_FILES = {
   "/evidence-preview.js": ["evidence-preview.js", "text/javascript; charset=utf-8"],
   "/run-route.js": ["run-route.js", "text/javascript; charset=utf-8"],
   "/prompts.js": ["prompts.js", "text/javascript; charset=utf-8"],
+  "/status.js": ["status.js", "text/javascript; charset=utf-8"],
   "/styles.css": ["styles.css", "text/css; charset=utf-8"],
   "/report-download.js": ["report-download.js", "text/javascript; charset=utf-8"],
   "/platforms/instagram.png": ["platforms/instagram.png", "image/png"],
@@ -84,13 +85,27 @@ async function handleRequest(request, response, env, mediaRegistry) {
       return response.end(content);
     }
     if (request.method === "GET" && url.pathname === "/api/status") {
-      const config = await readConfig(env);
+      let config;
+      try {
+        config = await readConfig(env);
+      } catch {
+        return sendJson(response, 200, {
+          jevConfigured: false,
+          jevModel: env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest",
+          socai: { installed: false, version: null, capabilities: { instagram: false, tiktok: false, linkedin: false } },
+          configError: "Configuration could not be read.",
+        });
+      }
       const socai = await probeSocai(config, env);
       return sendJson(response, 200, {
         jevConfigured: Boolean(resolveApiKey(config, env)),
         jevModel: env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest",
-        configPath: getConfigPath(env),
-        socai,
+        socai: {
+          installed: socai.installed,
+          version: socai.version ?? null,
+          capabilities: socai.capabilities,
+          ...(socai.error ? { error: socai.error } : {}),
+        },
       });
     }
     if (request.method === "POST" && url.pathname === "/api/onboard") {

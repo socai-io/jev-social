@@ -12,13 +12,13 @@ Jev Social directs your Chrome browser through the [socai](https://github.com/so
 >   ```bash
 >   # macOS / Linux (inspect paths)
 >   echo "Jev Social runs: ${JEV_SOCIAL_HOME:-$HOME/.jev-social}/runs"
->   SOCAI_CONFIG_RUNS="$(/path/from-api-status config get runs.dir 2>/dev/null)"
+>   SOCAI_CONFIG_RUNS="$(/path/from-status config get runs.dir 2>/dev/null)"
 >   echo "socai artifacts: ${SOCAI_RUNS_DIR:-${SOCAI_CONFIG_RUNS:-$HOME/.socai/runs}}"
 >   ```
 >   ```powershell
 >   # Windows PowerShell (inspect paths)
 >   $jevDir = if ($env:JEV_SOCIAL_HOME) { Join-Path $env:JEV_SOCIAL_HOME "runs" } else { "$HOME\.jev-social\runs" }
->   $configuredRuns = (& /path/from-api-status config get runs.dir 2>$null)
+>   $configuredRuns = (& /path/from-status config get runs.dir 2>$null)
 >   $socaiDir = if ($env:SOCAI_RUNS_DIR) { $env:SOCAI_RUNS_DIR } elseif ($configuredRuns) { $configuredRuns } else { "$HOME\.socai\runs" }
 >   Write-Host "Jev Social runs: $jevDir"
 >   Write-Host "socai artifacts: $socaiDir"
@@ -59,7 +59,7 @@ By default (using `existing` or `managed` Chrome modes without external endpoint
 
 Run these diagnostic commands to verify readiness without exposing API credentials or browser secrets:
 
-### 1. Check Configuration & Capabilities via `/api/status`
+### 1. Check Configuration & Capabilities
 
 Jev Social resolves your OpenRouter key from `OPENROUTER_API_KEY`, lowercase `openrouter` in `.env`, or saved onboarding config (`config.json`). Checking only `$OPENROUTER_API_KEY` in your shell can falsely report "missing" when a key is already configured.
 
@@ -69,21 +69,7 @@ Query the local status endpoint to verify the effective `jevConfigured` state an
 curl -s http://127.0.0.1:8766/api/status
 ```
 
-> [!NOTE]
-> **Privacy note:** `/api/status` returns `configPath` and `socai.bin`. If sharing output in public issues or chat, redact these local filesystem paths.
-
-To inspect status with local paths filtered out, pipe the response through Node or `jq`:
-
-```bash
-# Filtered diagnostic (Node.js)
-curl -s http://127.0.0.1:8766/api/status | node -e '
-  const fs = require("fs");
-  const { jevConfigured, jevModel, socai } = JSON.parse(fs.readFileSync(0, "utf8"));
-  console.log(JSON.stringify({ jevConfigured, jevModel, socai: { installed: socai?.installed, capabilities: socai?.capabilities } }, null, 2));
-'
-```
-
-Expected output on an official `socai v0.6+` build (or a development build with social commands enabled):
+The browser API endpoint `/api/status` returns sanitized status and omits local filesystem paths:
 
 ```json
 {
@@ -91,6 +77,7 @@ Expected output on an official `socai v0.6+` build (or a development build with 
   "jevModel": "~typesafe/jev-latest",
   "socai": {
     "installed": true,
+    "version": "0.6.0",
     "capabilities": {
       "instagram": true,
       "tiktok": true,
@@ -102,11 +89,34 @@ Expected output on an official `socai v0.6+` build (or a development build with 
 
 *(Note: Platform capabilities are build-dependent. The official social CLI requires `v0.6+` or a development build with social subcommands enabled; older tagged releases such as `v0.5.6` registered only `xhs` and `dy`, so `instagram`, `tiktok`, and `linkedin` will all probe `false`. On `v0.6+` builds, `linkedin` evaluates to `true` or `false` depending on whether that specific build enables the LinkedIn subcommand.)*
 
-You can also run the CLI status command:
+For local operator diagnostics including the resolved configuration file path and binary path, run the CLI status command:
 
 ```bash
 npm start -- status
 ```
+
+Expected output:
+
+```json
+{
+  "jevConfigured": true,
+  "jevModel": "~typesafe/jev-latest",
+  "configPath": "/home/user/.jev-social/config.json",
+  "socai": {
+    "installed": true,
+    "bin": "/home/user/.socai/bin/socai",
+    "version": "0.6.0",
+    "capabilities": {
+      "instagram": true,
+      "tiktok": true,
+      "linkedin": true
+    }
+  }
+}
+```
+
+> [!NOTE]
+> **Privacy note:** `npm start -- status` outputs `configPath` and `socai.bin` for local operator diagnostics. If sharing CLI output in public issues or chat, redact these local filesystem paths. The browser API endpoint (`/api/status`) automatically keeps paths sanitized.
 
 ### 2. Verify the Resolved `socai` Binary
 
@@ -116,11 +126,11 @@ Jev Social resolves the `socai` binary in the following order:
 3. Local development build candidates (`target/debug` or `target/release`).
 4. System `PATH`.
 
-Because resolution is not pinned to a single binary and may differ from what is on your current shell `PATH`, test the exact binary resolved by Jev Social (found in the `socai.bin` field of `/api/status`, represented as `/path/from-api-status` below):
+Because resolution is not pinned to a single binary and may differ from what is on your current shell `PATH`, test the exact binary resolved by Jev Social (found in the `socai.bin` field of `npm start -- status`, represented as `/path/from-status` below):
 
 ```bash
-# Replace /path/from-api-status with your resolved binary path from /api/status:
-/path/from-api-status --version
+# Replace /path/from-status with your resolved binary path from `npm start -- status`:
+/path/from-status --version
 ```
 
 ### 3. Installing or Reinstalling `socai`
@@ -150,16 +160,16 @@ Because resolution is not pinned to a single binary and may differ from what is 
 
 ```bash
 # Select profile connection mode: existing, managed, auto, or remote (requires Pro)
-/path/from-api-status config set chrome.profile existing
+/path/from-status config set chrome.profile existing
 
 # Select a custom Chrome profile / user data directory (applies to managed and auto modes):
-/path/from-api-status config set chrome.profile_dir /path/to/profile/dir
+/path/from-status config set chrome.profile_dir /path/to/profile/dir
 
 # Stop the running daemon so new chrome.* settings take effect:
-/path/from-api-status stop
+/path/from-status stop
 
 # Inspect active configuration:
-/path/from-api-status config get
+/path/from-status config get
 ```
 
 ### Connection Modes & Precedence in `socai v0.6.0`
@@ -171,7 +181,7 @@ Because resolution is not pinned to a single binary and may differ from what is 
 - **`remote` (Hosted)**: A hosted cloud browser mode that requires **socai Pro** and provisions temporary remote sessions via `socai-server` (unless an explicit `SOCAI_CDP_*` endpoint override is set). Because hosted remote containers lack local GUI interaction, users cannot interactively solve login gates or CAPTCHAs in hosted `remote` mode; authoritative `socai` guidance is to retry later or switch to `existing` or `managed` mode to authenticate.
 
 > [!TIP]
-> If changing `chrome.*` configuration while the background `socai` daemon or browser is running, run `/path/from-api-status stop` (or `socai stop`) so the daemon reloads settings on the next run.
+> If changing `chrome.*` configuration while the background `socai` daemon or browser is running, run `/path/from-status stop` (or `socai stop`) so the daemon reloads settings on the next run.
 
 Jev Social forwards connection overrides (`SOCAI_CDP_URL`, `SOCAI_CDP_WS`, `SOCAI_CHROME_USER_DATA_DIR`, and `SOCAI_CHROME_EXECUTABLE`) to child processes during runtime discovery. (Note: `socai` does not read `SOCAI_CHROME_PROFILE`; use `socai config set chrome.profile` to configure the connection mode.)
 
@@ -196,7 +206,7 @@ Jev Social forwards connection overrides (`SOCAI_CDP_URL`, `SOCAI_CDP_WS`, `SOCA
 - **Issue**: TikTok may present an interactive puzzle/slider challenge or restrict video detail and comments for unauthenticated sessions.
 - **Resolution**: Complete any active puzzle verification within a user-accessible Chrome session/profile selected by `socai` (`existing` or `managed` mode). Test direct platform access using the resolved `socai` executable:
   ```bash
-  /path/from-api-status tiktok search "wearable AI" --num 4 --pretty
+  /path/from-status tiktok search "wearable AI" --num 4 --pretty
   ```
 
 ### LinkedIn
@@ -210,7 +220,7 @@ Jev Social forwards connection overrides (`SOCAI_CDP_URL`, `SOCAI_CDP_WS`, `SOCA
     Confirm that `socai.capabilities.linkedin` evaluates to `true` (it evaluates to `false` on builds without the LinkedIn subcommand enabled).
   - Test subcommand availability directly on the resolved executable:
     ```bash
-    /path/from-api-status linkedin --help
+    /path/from-status linkedin --help
     ```
 - **Resolution**: Sign into LinkedIn within a user-accessible Chrome session/profile selected by `socai` (`existing` or `managed` mode; switch to `existing` or `managed` if on hosted `remote` mode). Once your authenticated session is active and `socai.capabilities.linkedin` is `true`, run research through Jev Social:
   ```bash
@@ -218,7 +228,7 @@ Jev Social forwards connection overrides (`SOCAI_CDP_URL`, `SOCAI_CDP_WS`, `SOCA
   ```
   On builds where the `linkedin` subcommand is supported by the resolved binary:
   ```bash
-  /path/from-api-status linkedin search "AI product managers" --num 4 --pretty
+  /path/from-status linkedin search "AI product managers" --num 4 --pretty
   ```
 
 ---

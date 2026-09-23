@@ -29,7 +29,7 @@
   "scripts": {
     "start": "node ./bin/jev-social.js",
     "dev": "node --watch ./bin/jev-social.js serve --no-open",
-    "check": "node --check ./bin/jev-social.js && node --check ./src/server.js && node --check ./public/app.js && node --check ./public/evidence-preview.js && node --check ./public/run-route.js && node --check ./public/report-download.js && node --check ./public/prompts.js",
+    "check": "node --check ./bin/jev-social.js && node --check ./src/server.js && node --check ./public/app.js && node --check ./public/evidence-preview.js && node --check ./public/run-route.js && node --check ./public/report-download.js && node --check ./public/prompts.js && node --check ./public/status.js",
     "test": "node --test"
   },
   "engines": {

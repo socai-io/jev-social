@@ -132,3 +132,57 @@ test("bindPromptButtons registers click listeners, prevents default submit, and 
   cleanup();
   assert.equal(clickListener, null);
 });
+
+test("updatePromptButtons visibly disables unsupported platforms with accessible explanations", async () => {
+  const { updatePromptButtons } = await import("../public/prompts.js");
+  const attributes = new Map();
+  const mockButton = {
+    dataset: { platform: "linkedin", query: "find PMs" },
+    disabled: false,
+    setAttribute(name, value) {
+      attributes.set(name, value);
+    },
+    removeAttribute(name) {
+      attributes.delete(name);
+    },
+    getAttribute(name) {
+      return attributes.get(name);
+    },
+  };
+
+  updatePromptButtons([mockButton], { instagram: true, tiktok: true, linkedin: false });
+  assert.equal(mockButton.disabled, true);
+  assert.equal(mockButton.title, "LinkedIn search isn't available in this socai build");
+  assert.equal(attributes.get("aria-description"), "LinkedIn search isn't available in this socai build");
+  assert.equal(attributes.get("aria-disabled"), "true");
+
+  let clicked = false;
+  const mockQuery = { value: "" };
+  const mockPlatform = { value: "auto" };
+  let listener = null;
+  mockButton.addEventListener = (_type, cb) => {
+    listener = cb;
+  };
+  mockButton.removeEventListener = () => {
+    listener = null;
+  };
+
+  bindPromptButtons({
+    buttons: [mockButton],
+    queryElement: mockQuery,
+    platformElement: mockPlatform,
+    onSelect() {
+      clicked = true;
+    },
+  });
+
+  listener({ preventDefault() {} });
+  assert.equal(clicked, false, "Disabled button click must not trigger onSelect");
+  assert.equal(mockQuery.value, "", "Disabled button must not set query value");
+
+  updatePromptButtons([mockButton], { instagram: true, tiktok: true, linkedin: true });
+  assert.equal(mockButton.disabled, false);
+  assert.equal(mockButton.title, "");
+  assert.equal(attributes.has("aria-description"), false);
+  assert.equal(attributes.has("aria-disabled"), false);
+});

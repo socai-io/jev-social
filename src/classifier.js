@@ -7,16 +7,35 @@ const ROUTE_TO_PLATFORM = {
   linkedin_search: "linkedin",
 };
 
+const WORKFLOW_DEFINITIONS = {
+  instagram: {
+    workflow: "Read-only Instagram search via the socai CLI",
+    route: "instagram_search",
+    criterion: "Search or research Instagram content, profiles, posts, or reels.",
+  },
+  tiktok: {
+    workflow: "Read-only TikTok search via the socai CLI",
+    route: "tiktok_search",
+    criterion: "Search or research TikTok content, creators, or videos.",
+  },
+  linkedin: {
+    workflow: "Read-only LinkedIn search via the socai CLI",
+    route: "linkedin_search",
+    criterion: "Search or research LinkedIn people, companies, posts, or professional experience.",
+  },
+};
+
 export async function classifySearch({
   goal,
   requestedPlatform = "auto",
+  capabilities = { instagram: true, tiktok: true, linkedin: true },
   apiKey,
   model = process.env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest",
   client,
   fetchImpl = fetch,
   signal,
 }) {
-  const normalizedPlatform = requestedPlatform.toLowerCase();
+  const normalizedPlatform = (requestedPlatform || "auto").toLowerCase();
   if (normalizedPlatform !== "auto" && !SUPPORTED_PLATFORMS.has(normalizedPlatform)) {
     throw new AppError(`Unsupported platform: ${requestedPlatform}`, {
       code: "INVALID_PLATFORM",
@@ -26,16 +45,28 @@ export async function classifySearch({
     throw new AppError("Search query cannot be empty.", { code: "EMPTY_QUERY" });
   }
 
+  const activePlatforms = [...SUPPORTED_PLATFORMS].filter((p) => capabilities?.[p] !== false);
+
+  if (normalizedPlatform !== "auto" && !activePlatforms.includes(normalizedPlatform)) {
+    throw new AppError(`The installed socai CLI does not support ${normalizedPlatform} search.`, {
+      code: "SOCAI_CAPABILITY_MISSING",
+      details: { platform: normalizedPlatform },
+    });
+  }
+
+  const supportedWorkflows = activePlatforms.map((p) => WORKFLOW_DEFINITIONS[p].workflow);
+  const routeCriteria = {};
+  for (const p of activePlatforms) {
+    routeCriteria[WORKFLOW_DEFINITIONS[p].route] = WORKFLOW_DEFINITIONS[p].criterion;
+  }
+  routeCriteria.unsupported = "Anything else, including posting, liking, following, messaging, or an ambiguous auto route.";
+
   const request = {
     model,
     state: {
       request: goal.trim(),
       requested_platform: normalizedPlatform,
-      supported_workflows: [
-        "Read-only Instagram search via the socai CLI",
-        "Read-only TikTok search via the socai CLI",
-        "Read-only LinkedIn search via the socai CLI",
-      ],
+      supported_workflows: supportedWorkflows,
     },
     questions: {
       route: {
@@ -48,13 +79,7 @@ export async function classifySearch({
             "Do not invent another platform or an action that changes remote state.",
           ],
         },
-        criteria: {
-          instagram_search: "Search or research Instagram content, profiles, posts, or reels.",
-          tiktok_search: "Search or research TikTok content, creators, or videos.",
-          linkedin_search: "Search or research LinkedIn people, companies, posts, or professional experience.",
-          unsupported:
-            "Anything else, including posting, liking, following, messaging, or an ambiguous auto route.",
-        },
+        criteria: routeCriteria,
       },
     },
   };

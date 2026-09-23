@@ -141,3 +141,60 @@ test("classifySearch fails closed on a malformed Jev decision", async () => {
     (error) => error.code === "INVALID_JEV_RESPONSE",
   );
 });
+
+test("classifySearch dynamically filters workflows and route criteria based on capability set", async () => {
+  let request;
+  const client = {
+    async systemOne(value) {
+      request = value;
+      return {
+        answers: {
+          route: { type: "choice", choice: "instagram_search", confidence: 0.9 },
+        },
+      };
+    },
+  };
+
+  const capabilities = { instagram: true, tiktok: false, linkedin: false };
+  const result = await classifySearch({
+    goal: "find creators",
+    requestedPlatform: "auto",
+    capabilities,
+    client,
+  });
+
+  assert.equal(result.platform, "instagram");
+  assert.deepEqual(request.state.supported_workflows, [
+    "Read-only Instagram search via the socai CLI",
+  ]);
+  assert.deepEqual(Object.keys(request.questions.route.criteria), [
+    "instagram_search",
+    "unsupported",
+  ]);
+});
+
+test("classifySearch throws SOCAI_CAPABILITY_MISSING when requested platform is disabled in capabilities", async () => {
+  let called = false;
+  const client = {
+    async systemOne() {
+      called = true;
+      return { answers: { route: { type: "choice", choice: "linkedin_search", confidence: 0.9 } } };
+    },
+  };
+
+  const capabilities = { instagram: true, tiktok: true, linkedin: false };
+  await assert.rejects(
+    classifySearch({
+      goal: "find product managers",
+      requestedPlatform: "linkedin",
+      capabilities,
+      client,
+    }),
+    (error) => {
+      assert.equal(error.code, "SOCAI_CAPABILITY_MISSING");
+      assert.equal(error.details?.platform, "linkedin");
+      return true;
+    },
+  );
+  assert.equal(called, false, "Model must not be called when platform is not in capabilities");
+});

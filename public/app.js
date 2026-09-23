@@ -8,14 +8,16 @@ import {
   nextPreviewCandidate,
   selectSummaryCards,
 } from "./evidence-preview.js";
-import { bindPromptButtons } from "./prompts.js";
+import { bindPromptButtons, platformLabel, updatePromptButtons } from "./prompts.js";
 import { parseRunRoute, resultHash } from "./run-route.js";
+import { deriveStatusView } from "./status.js";
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
   searchView: $("#search-view"),
   resultView: $("#result-view"),
   searchForm: $("#search-form"),
+  platformNotice: $("#platform-notice"),
   activity: $("#activity"),
   activityTitle: $("#activity-title"),
   activityMessage: $("#activity-message"),
@@ -43,6 +45,7 @@ let restorePoll;
 elements.searchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   clearError();
+  clearPlatformNotice();
   resetLiveWorkspace();
   const query = $("#query").value.trim();
   $("#result-title").textContent = query;
@@ -99,6 +102,8 @@ bindPromptButtons({
   queryElement: $("#query"),
   platformElement: $("#platform"),
 });
+$("#query")?.addEventListener("input", clearPlatformNotice);
+$("#platform")?.addEventListener("change", clearPlatformNotice);
 
 function handleStreamEvent(event) {
   if (event.stage === "result") return;
@@ -216,12 +221,59 @@ async function restoreRunFromRoute() {
 async function refreshStatus() {
   try {
     const status = await api("/api/status");
-    setStatus("jev", status.jevConfigured, status.jevConfigured ? "Jev ready" : "Jev needs a key");
-    const caps = status.socai.capabilities || {};
-    const ready = status.socai.installed && (caps.instagram || caps.tiktok || caps.linkedin);
-    setStatus("socai", ready, ready ? "socai ready" : "socai unavailable");
+    const view = deriveStatusView(status);
+    setStatus("jev", view.jev.ready, view.jev.label);
+    setStatus("socai", view.socai.ready, view.socai.label);
+    if (view.error) showError(new Error(view.error));
+
+    updatePlatformOptions(view.capabilities);
+    updatePromptButtons(document.querySelectorAll(".prompt-example-btn"), view.capabilities);
   } catch (error) {
     showError(error);
+  }
+}
+
+function updatePlatformOptions(caps = {}) {
+  const platformSelect = $("#platform");
+  if (!platformSelect) return;
+  const previousValue = platformSelect.value;
+  let switchedToAuto = false;
+
+  for (const option of platformSelect.options) {
+    const val = option.value;
+    if (val === "auto") continue;
+    const isAvailable = Boolean(caps[val]);
+    option.disabled = !isAvailable;
+    const label = platformLabel(val);
+    if (!isAvailable) {
+      option.title = `${label} search isn't available in this socai build`;
+      option.textContent = `${label} (unavailable)`;
+      if (previousValue === val) {
+        switchedToAuto = true;
+      }
+    } else {
+      option.title = "";
+      option.textContent = label;
+    }
+  }
+
+  if (switchedToAuto) {
+    platformSelect.value = "auto";
+    showPlatformNotice(`${platformLabel(previousValue)} search isn't available in this socai build. Switched to Jev auto.`);
+  }
+}
+
+function showPlatformNotice(message) {
+  if (elements.platformNotice) {
+    elements.platformNotice.textContent = message;
+    elements.platformNotice.classList.remove("hidden");
+  }
+}
+
+function clearPlatformNotice() {
+  if (elements.platformNotice) {
+    elements.platformNotice.textContent = "";
+    elements.platformNotice.classList.add("hidden");
   }
 }
 
