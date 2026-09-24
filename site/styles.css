@@ -262,9 +262,15 @@ h1 span {
   text-transform: uppercase;
 }
 
+.trust-line a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+
 .demo,
 .flow,
 .proof,
+.evidence,
 .run,
 .share {
   padding: clamp(70px, 9vw, 130px) clamp(22px, 7vw, 110px);
@@ -467,6 +473,98 @@ h3 {
 .blue { color: #75d9ff; }
 .green { color: #6ee7a0; }
 
+.evidence {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.evidence .section-label,
+.evidence .section-heading p {
+  color: #aaa7a2;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.evidence-card {
+  display: flex;
+  min-height: 360px;
+  flex-direction: column;
+  padding: 24px;
+  border: 1px solid #4b4b50;
+  background: #17171a;
+}
+
+.evidence-card:nth-child(2) {
+  box-shadow: 7px 7px 0 var(--blue-strong);
+}
+
+.evidence-card:nth-child(3) {
+  box-shadow: 7px 7px 0 var(--pink);
+}
+
+.evidence-kicker {
+  margin-bottom: 54px;
+  color: #aaa7a2;
+  font: 700 10px/1.4 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.evidence-card h3 {
+  font-size: clamp(26px, 2.6vw, 39px);
+  line-height: 1;
+}
+
+.evidence-card > p {
+  min-height: 66px;
+  color: #c9c7c3;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.evidence-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: auto 0 24px;
+  border-top: 1px solid #4b4b50;
+  border-bottom: 1px solid #4b4b50;
+}
+
+.evidence-card dl div {
+  padding: 14px 0;
+}
+
+.evidence-card dt {
+  margin-bottom: 7px;
+  color: #8d8d92;
+  font: 700 9px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.evidence-card dd {
+  margin: 0;
+  font: 700 13px/1 var(--mono);
+}
+
+.evidence-card > a {
+  font: 700 10px/1.4 var(--mono);
+  text-transform: uppercase;
+  text-underline-offset: 4px;
+}
+
+.evidence-note {
+  max-width: 900px;
+  margin: 28px 0 0;
+  color: #aaa7a2;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .run {
   background:
     repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.65) 0 2px, transparent 2px 14px),
@@ -622,6 +720,7 @@ footer a {
 
   .section-heading,
   .proof,
+  .evidence-grid,
   .share {
     grid-template-columns: 1fr;
   }

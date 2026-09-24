@@ -43,6 +43,31 @@ test("the Pages artifact retains the .nojekyll marker", async () => {
   );
 });
 
+test("the Pages landing exposes current structured metadata and recorded evidence", async () => {
+  const landing = await readFile(new URL("../site/index.html", import.meta.url), "utf8");
+  const structuredData = landing.match(
+    /<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/,
+  );
+  assert.ok(structuredData, "site/index.html must include JSON-LD");
+
+  const software = JSON.parse(structuredData[1]);
+  assert.equal(software["@type"], "SoftwareApplication");
+  assert.equal(software.softwareVersion, packageJson.version);
+  assert.equal(software.codeRepository, "https://github.com/socai-io/jev-social");
+  assert.equal(software.offers?.price, "0");
+  assert.ok(software.sameAs?.includes("https://ossdrop.com/tool/jev-social"));
+
+  for (const expected of [
+    "docs/example-report.md",
+    "docs/tiktok-evidence.md#search",
+    "docs/tiktok-evidence.md#video-detail-and-media-download",
+    "https://ossdrop.com/tool/jev-social",
+  ]) {
+    assert.match(landing, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.match(landing, /individual local observations, not a benchmark/i);
+});
+
 test("the Grok plugin manifest exposes the released Jev Social skill", async () => {
   const manifest = JSON.parse(
     await readFile(new URL("../.grok-plugin/plugin.json", import.meta.url), "utf8"),

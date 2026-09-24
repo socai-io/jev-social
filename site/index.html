@@ -34,10 +34,23 @@
         "url": "https://socai-io.github.io/jev-social/",
         "codeRepository": "https://github.com/socai-io/jev-social",
         "downloadUrl": "https://github.com/socai-io/jev-social/releases/latest",
+        "image": "https://socai-io.github.io/jev-social/assets/social-preview.jpg",
         "softwareVersion": "0.1.5",
         "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "macOS, Windows, Linux",
         "isAccessibleForFree": true,
-        "license": "https://opensource.org/license/mit"
+        "license": "https://opensource.org/license/mit",
+        "dateModified": "2026-09-25",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "sameAs": [
+          "https://github.com/socai-io/jev-social",
+          "https://ossdrop.com/tool/jev-social",
+          "https://socai.io/blog/jev-social-media-automation/"
+        ]
       }
     </script>
   </head>
@@ -72,7 +85,10 @@
           <a class="button button-dark" href="#run">Run it locally ↓</a>
           <a class="button button-light" href="https://github.com/socai-io/jev-social" rel="noreferrer">View source ↗</a>
         </div>
-        <p class="trust-line">Local UI · real CLI calls · no mock fallback · MIT licensed</p>
+        <p class="trust-line">
+          Local UI · real CLI calls · no mock fallback · MIT licensed ·
+          <a href="https://ossdrop.com/tool/jev-social" rel="noreferrer">#1 Tool of the Day on OSSDrop ↗</a>
+        </p>
       </section>
 
       <section class="demo reveal" aria-labelledby="demo-heading">
@@ -143,11 +159,52 @@
         </figure>
       </section>
 
+      <section class="evidence reveal" aria-labelledby="evidence-heading">
+        <div class="section-label">RECORDED EVIDENCE</div>
+        <div class="section-heading">
+          <h2 id="evidence-heading">Inspect the output,<br>not a speed claim.</h2>
+          <p>Three dated local observations show what was captured, how long that run took, and where the evidence is incomplete.</p>
+        </div>
+        <div class="evidence-grid">
+          <article class="evidence-card">
+            <span class="evidence-kicker">Instagram · Jev loop</span>
+            <h3>4 source-linked records</h3>
+            <p>Two searches and one Jev-selected post-detail read, compiled into a Markdown report.</p>
+            <dl>
+              <div><dt>Elapsed</dt><dd>63.969 s</dd></div>
+              <div><dt>Status</dt><dd>Complete</dd></div>
+            </dl>
+            <a href="https://github.com/socai-io/jev-social/blob/main/docs/example-report.md" rel="noreferrer">Open the report ↗</a>
+          </article>
+          <article class="evidence-card">
+            <span class="evidence-kicker">TikTok · socai search</span>
+            <h3>5 public result URLs</h3>
+            <p>A recorded CLI search with the returned post links preserved for inspection.</p>
+            <dl>
+              <div><dt>Elapsed</dt><dd>7.570 s</dd></div>
+              <div><dt>Status</dt><dd>Complete</dd></div>
+            </dl>
+            <a href="https://github.com/socai-io/jev-social/blob/main/docs/tiktok-evidence.md#search" rel="noreferrer">Inspect the search ↗</a>
+          </article>
+          <article class="evidence-card">
+            <span class="evidence-kicker">TikTok · selected video</span>
+            <h3>Video and poster saved</h3>
+            <p>A 7,988,959-byte MP4 and 95,592-byte poster were captured; comments were unavailable.</p>
+            <dl>
+              <div><dt>Elapsed</dt><dd>38.263 s</dd></div>
+              <div><dt>Status</dt><dd>Partial</dd></div>
+            </dl>
+            <a href="https://github.com/socai-io/jev-social/blob/main/docs/tiktok-evidence.md#video-detail-and-media-download" rel="noreferrer">Inspect the media evidence ↗</a>
+          </article>
+        </div>
+        <p class="evidence-note">These are individual local observations, not a benchmark or guaranteed latency. Live-site behavior, network conditions, login state, and Jev's selected operations change the total time.</p>
+      </section>
+
       <section class="run reveal" id="run" aria-labelledby="run-heading">
         <div class="run-copy">
           <div class="section-label">RUN LOCALLY</div>
           <h2 id="run-heading">Your browser. Your session. Your evidence.</h2>
-          <p>Requires Node 20+ and an OpenRouter key with Jev access. Onboarding offers to install the current socai CLI when it is missing.</p>
+          <p>Requires Node 20+, an OpenRouter key with Jev access, and the socai browser runtime. Prebuilt socai installers currently ship for macOS and Windows; Linux uses the documented Cargo source install.</p>
         </div>
         <div class="code-block">
           <div class="code-label">TERMINAL</div>
