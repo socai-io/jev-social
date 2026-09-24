@@ -10,6 +10,8 @@
 [![release](https://img.shields.io/github/v/release/socai-io/jev-social?style=flat-square&label=release)](https://github.com/socai-io/jev-social/releases/latest)
 [![license](https://img.shields.io/github/license/socai-io/jev-social?style=flat-square&label=license)](LICENSE)
 
+<a href="https://ossdrop.com/tool/jev-social"><img src="https://ossdrop.com/badge/jev-social" alt="#1 Tool of the Day on OSSDrop" width="250" height="56"></a>
+
 Jev chooses each next operation: search, open a particular post or profile, read comments, explicitly requested TikTok media download, or finish. [socai](https://github.com/socai-io/socai) executes the selected CLI command in your real Chrome. Each result goes back to Jev before the next decision.
 
 <p>
