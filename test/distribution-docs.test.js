@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 const packageJson = JSON.parse(
@@ -81,4 +81,18 @@ test("the Grok plugin manifest exposes the released Jev Social skill", async () 
   assert.match(manifest.description, /socai CLI/);
   assert.deepEqual(skillDirectories, ["jev-social"]);
   assert.match(skill, /^name: jev-social$/m);
+
+  for (const componentPath of [
+    "../commands/",
+    "../agents/",
+    "../hooks/hooks.json",
+    "../.mcp.json",
+    "../.lsp.json",
+  ]) {
+    await assert.rejects(
+      access(new URL(componentPath, import.meta.url)),
+      (error) => error?.code === "ENOENT",
+      `${componentPath} would expand the Grok plugin beyond its single read-only skill`,
+    );
+  }
 });
