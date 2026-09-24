@@ -5,6 +5,7 @@
 **Jev is cool. Giving it access to your social media is cooler.**
 
 [![GitHub stars](https://img.shields.io/github/stars/socai-io/jev-social?style=flat-square&label=stars)](https://github.com/socai-io/jev-social/stargazers)
+[![Skills installs](https://skills.sh/b/socai-io/jev-social)](https://skills.sh/socai-io/jev-social/jev-social)
 [![tests](https://github.com/socai-io/jev-social/actions/workflows/test.yml/badge.svg)](https://github.com/socai-io/jev-social/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/socai-io/jev-social?style=flat-square&label=release)](https://github.com/socai-io/jev-social/releases/latest)
 [![license](https://img.shields.io/github/license/socai-io/jev-social?style=flat-square&label=license)](LICENSE)
@@ -89,7 +90,7 @@ To let Codex invoke the same browser-grounded workflow through GitHub CLI 2.101 
 gh skill install socai-io/jev-social jev-social@v0.1.5 --agent codex --scope user
 ```
 
-Or install it with the cross-agent Skills CLI:
+Or install it from the [skills.sh directory](https://skills.sh/socai-io/jev-social/jev-social) with the cross-agent Skills CLI:
 
 ```bash
 npx skills add socai-io/jev-social --skill jev-social
