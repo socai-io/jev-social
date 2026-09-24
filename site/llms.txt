@@ -20,6 +20,7 @@ The choice set contains only operations supported by the installed socai CLI and
 - partial evidence when a login gate, access limit, decision failure, or step limit stops the run
 
 Recorded output example: https://github.com/socai-io/jev-social/blob/main/docs/example-report.md
+Recorded TikTok search and media evidence: https://github.com/socai-io/jev-social/blob/main/docs/tiktok-evidence.md
 
 ## Supported operations
 
@@ -84,6 +85,8 @@ This is a standard Agent Skill that calls the local socai CLI, not an OpenCode p
 
 - README and setup: https://github.com/socai-io/jev-social#readme
 - Real evidence report: https://github.com/socai-io/jev-social/blob/main/docs/example-report.md
+- TikTok search and media evidence: https://github.com/socai-io/jev-social/blob/main/docs/tiktok-evidence.md
+- OSSDrop award and live listing: https://ossdrop.com/tool/jev-social
 - Issues and roadmap: https://github.com/socai-io/jev-social/issues
 - Releases: https://github.com/socai-io/jev-social/releases
 - socai browser runtime: https://github.com/socai-io/socai
