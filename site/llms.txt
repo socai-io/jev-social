@@ -64,6 +64,14 @@ The cross-agent Skills CLI is also supported:
 npx skills add socai-io/jev-social --skill jev-social
 ```
 
+OpenCode can install the tested v0.1.5 Skill into its natively discovered project directory:
+
+```bash
+npx skills add https://github.com/socai-io/jev-social/tree/v0.1.5/skills/jev-social --agent opencode --yes
+```
+
+This is a standard Agent Skill that calls the local socai CLI, not an OpenCode plugin.
+
 ## Runtime boundaries
 
 - Live-site speed and result coverage depend on the selected operations, login state, browser session, network, and platform behavior.
