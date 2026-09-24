@@ -42,3 +42,18 @@ test("the Pages artifact retains the .nojekyll marker", async () => {
     /actions\/upload-pages-artifact@[^\n]+# v5\.0\.0[\s\S]*?with:\n\s+path: _site\n\s+include-hidden-files: true/,
   );
 });
+
+test("the Grok plugin manifest exposes the released Jev Social skill", async () => {
+  const manifest = JSON.parse(
+    await readFile(new URL("../.grok-plugin/plugin.json", import.meta.url), "utf8"),
+  );
+  const skill = await readFile(new URL("../skills/jev-social/SKILL.md", import.meta.url), "utf8");
+
+  assert.equal(manifest.name, packageJson.name);
+  assert.equal(manifest.version, packageJson.version);
+  assert.equal(manifest.license, packageJson.license);
+  assert.equal(manifest.repository, "https://github.com/socai-io/jev-social");
+  assert.match(manifest.description, /Jev/);
+  assert.match(manifest.description, /socai CLI/);
+  assert.match(skill, /^name: jev-social$/m);
+});
