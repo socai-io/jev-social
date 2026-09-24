@@ -95,6 +95,12 @@ Or install it with the cross-agent Skills CLI:
 npx skills add socai-io/jev-social --skill jev-social
 ```
 
+For OpenCode, install the tested v0.1.5 skill into its natively discovered project skill directory:
+
+```bash
+npx skills add https://github.com/socai-io/jev-social/tree/v0.1.5/skills/jev-social --agent opencode --yes
+```
+
 The skill pins the documented Jev Social CLI release, preserves its read-only and login-gate boundaries, and returns source-linked evidence instead of raw run JSON. Platform availability is checked against the installed socai CLI before a run.
 
 To work from a source checkout instead:
