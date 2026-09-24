@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 const packageJson = JSON.parse(
@@ -47,13 +47,38 @@ test("the Grok plugin manifest exposes the released Jev Social skill", async () 
   const manifest = JSON.parse(
     await readFile(new URL("../.grok-plugin/plugin.json", import.meta.url), "utf8"),
   );
+  const skillDirectories = (await readdir(new URL("../skills/", import.meta.url), {
+    withFileTypes: true,
+  }))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
   const skill = await readFile(new URL("../skills/jev-social/SKILL.md", import.meta.url), "utf8");
 
+  assert.deepEqual(Object.keys(manifest).sort(), [
+    "author",
+    "description",
+    "homepage",
+    "keywords",
+    "license",
+    "name",
+    "repository",
+    "version",
+  ]);
   assert.equal(manifest.name, packageJson.name);
   assert.equal(manifest.version, packageJson.version);
   assert.equal(manifest.license, packageJson.license);
   assert.equal(manifest.repository, "https://github.com/socai-io/jev-social");
+  assert.equal(manifest.homepage, packageJson.homepage);
+  assert.deepEqual(manifest.author, {
+    name: "socai-io",
+    url: "https://github.com/socai-io",
+  });
+  assert.ok(Array.isArray(manifest.keywords));
+  assert.ok(manifest.keywords.length > 0);
+  assert.ok(manifest.keywords.every((keyword) => typeof keyword === "string" && keyword.length > 0));
   assert.match(manifest.description, /Jev/);
   assert.match(manifest.description, /socai CLI/);
+  assert.deepEqual(skillDirectories, ["jev-social"]);
   assert.match(skill, /^name: jev-social$/m);
 });
