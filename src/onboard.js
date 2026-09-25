@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { AppError } from "./errors.js";
 import { readConfig, resolveApiKey, writeConfig } from "./config.js";
+import { resolveDecisionProvider } from "./decision-provider.js";
 import { runProcess } from "./process.js";
 import { probeSocai } from "./socai.js";
 
@@ -82,13 +83,16 @@ export async function saveOnboarding({
   onMessage,
 }) {
   const current = await readConfig(env);
+  const provider = resolveDecisionProvider(env);
   const key = apiKey?.trim() || resolveApiKey(current, env);
-  if (!key) {
+  if (provider.kind === "openrouter" && !key) {
     throw new AppError("An OpenRouter API key is required for Jev routing.", {
       code: "OPENROUTER_KEY_REQUIRED",
     });
   }
-  const keyInfo = verify ? await verifyOpenRouterApiKey(key) : {};
+  const keyInfo = provider.kind === "openrouter" && verify
+    ? await verifyOpenRouterApiKey(key)
+    : {};
   if (installCli) await installSocaiCli({ onMessage });
 
   const next = {
@@ -99,7 +103,12 @@ export async function saveOnboarding({
   };
   const configPath = await writeConfig(next, env);
   const socai = await probeSocai(next, env);
-  return { configPath, keyInfo, socai };
+  return {
+    configPath,
+    keyInfo,
+    decisionProvider: { kind: provider.kind, model: provider.model },
+    socai,
+  };
 }
 
 export const verifyTypesafeApiKey = verifyOpenRouterApiKey;

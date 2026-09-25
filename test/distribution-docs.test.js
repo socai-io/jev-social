@@ -7,8 +7,10 @@ const packageJson = JSON.parse(
 );
 const releaseTag = `v${packageJson.version}`;
 const pinnedSource = `github:socai-io/jev-social#v${packageJson.version}`;
+const pinnedSkillSource = `https://github.com/socai-io/jev-social/tree/v${packageJson.version}/skills/jev-social`;
 const publicDocs = [
   ["README.md", new URL("../README.md", import.meta.url)],
+  ["docs/troubleshooting.md", new URL("../docs/troubleshooting.md", import.meta.url)],
   ["site/index.html", new URL("../site/index.html", import.meta.url)],
   ["site/llms.txt", new URL("../site/llms.txt", import.meta.url)],
 ];
@@ -16,7 +18,7 @@ const publicDocs = [
 test("public no-clone commands require consent and pin the current release", async () => {
   for (const [name, url] of publicDocs) {
     const contents = await readFile(url, "utf8");
-    assert.doesNotMatch(contents, /npx\s+--yes\b/, `${name} must not auto-consent to downloads`);
+    assert.doesNotMatch(contents, /\bnpx\b[^\n]*\s--yes\b/, `${name} must not auto-consent to downloads`);
 
     const githubPackages = contents.match(/github:socai-io\/jev-social(?:#[^\s"'<`]+)?/g) ?? [];
     assert.ok(githubPackages.length > 0, `${name} must expose a GitHub-backed command`);
@@ -33,6 +35,20 @@ test("machine-readable setup avoids command-line credentials and exposes the Age
     contents,
     new RegExp(`gh skill install socai-io/jev-social jev-social@v${packageJson.version}\\b`),
   );
+});
+
+test("cross-agent Skill installers use the tagged release", async () => {
+  for (const [name, url] of publicDocs) {
+    const contents = await readFile(url, "utf8");
+    assert.doesNotMatch(
+      contents,
+      /npx skills add socai-io\/jev-social\b/,
+      `${name} must not install the mutable default branch`,
+    );
+    for (const command of contents.match(/npx skills add [^\n<`]*/g) ?? []) {
+      assert.match(command, new RegExp(pinnedSkillSource.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    }
+  }
 });
 
 test("package, plugin manifests, and Agent Skill identify the current release", async () => {

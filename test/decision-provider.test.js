@@ -124,6 +124,28 @@ test("decision providers fail closed on HTTP, JSON, and size errors", async () =
   }
 });
 
+test("local decision errors do not expose provider paths", async () => {
+  const provider = resolveDecisionProvider({
+    JEV_SOCIAL_SYSTEM_ONE_URL: "http://127.0.0.1:8009/v1/systemone",
+  });
+
+  await assert.rejects(
+    requestDecision({
+      provider,
+      request,
+      fetchImpl: async () => Response.json(
+        { error: { message: "model failed at /Users/alice/.cache/kev/model.bin" } },
+        { status: 500 },
+      ),
+    }),
+    (error) => {
+      assert.equal(error.message, "Local System One returned HTTP 500");
+      assert.doesNotMatch(error.message, /Users|alice|model\.bin/);
+      return true;
+    },
+  );
+});
+
 test("OpenRouter remains the default decision provider", () => {
   assert.deepEqual(resolveDecisionProvider({ OPENROUTER_JEV_MODEL: "typesafe/jev-test" }), {
     kind: "openrouter",

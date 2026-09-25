@@ -84,26 +84,26 @@ Node 20+, a decision provider (OpenRouter Jev or a loopback Kev server), and a c
 Fastest OpenRouter path — no repository clone required. Onboarding prompts for the key and offers to install the official socai CLI when it is missing:
 
 ```bash
-npx github:socai-io/jev-social#v0.1.6 onboard
-npx github:socai-io/jev-social#v0.1.6
+npx github:socai-io/jev-social#v0.1.7 onboard
+npx github:socai-io/jev-social#v0.1.7
 ```
 
 To let Codex invoke the same browser-grounded workflow through GitHub CLI 2.101 or newer:
 
 ```bash
-gh skill install socai-io/jev-social jev-social@v0.1.6 --agent codex --scope user
+gh skill install socai-io/jev-social jev-social@v0.1.7 --agent codex --scope user
 ```
 
 Or install it from the [skills.sh directory](https://skills.sh/socai-io/jev-social/jev-social) with the cross-agent Skills CLI:
 
 ```bash
-npx skills add socai-io/jev-social --skill jev-social
+npx skills add https://github.com/socai-io/jev-social/tree/v0.1.7/skills/jev-social --skill jev-social
 ```
 
-For OpenCode, install the tested v0.1.6 skill into its natively discovered project skill directory:
+For OpenCode, install the tested v0.1.7 skill into its natively discovered project skill directory:
 
 ```bash
-npx skills add https://github.com/socai-io/jev-social/tree/v0.1.6/skills/jev-social --agent opencode --yes
+npx skills add https://github.com/socai-io/jev-social/tree/v0.1.7/skills/jev-social --agent opencode
 ```
 
 The skill pins the documented Jev Social CLI release, preserves its read-only and login-gate boundaries, and returns source-linked evidence instead of raw run JSON. Platform availability is checked against the installed socai CLI before a run.
@@ -119,20 +119,21 @@ cp .env.example .env   # OPENROUTER_API_KEY=…
 npm start
 ```
 
-To run the decision loop through local [Kev](https://github.com/jaredpalmer/kev), start its TypeSafe-compatible server on loopback, then run the current Jev Social source checkout without an OpenRouter key:
+To run v0.1.7 through local [Kev](https://github.com/jaredpalmer/kev), start its TypeSafe-compatible server on loopback, then launch the tagged Jev Social release without an OpenRouter key:
 
 ```bash
+# Terminal 1
 git clone https://github.com/jaredpalmer/kev.git
 cd kev
 uv sync --extra serve
 uv run --extra serve python -m kev.serve --run jaredpalmer/kev-4b --port 8009
 
-# In the Jev Social checkout:
+# Terminal 2
 export JEV_SOCIAL_SYSTEM_ONE_URL=http://127.0.0.1:8009/v1/systemone
 export JEV_SOCIAL_SYSTEM_ONE_MODEL=kev-latest
 export JEV_SOCIAL_SYSTEM_ONE_TIMEOUT_MS=120000
 export OPENROUTER_REPORT_MODEL=off
-npm start
+npx github:socai-io/jev-social#v0.1.7
 ```
 
 The local endpoint must be plain HTTP on `localhost`, `127.0.0.1`, or `::1`, with the exact `/v1/systemone` path. Jev Social does not send the OpenRouter key to it, rejects redirects and oversized responses, and keeps the same typed choice validation. Local inference allows up to 120 seconds by default; lower it with `JEV_SOCIAL_SYSTEM_ONE_TIMEOUT_MS`. `OPENROUTER_REPORT_MODEL=off` uses the deterministic source-linked report; the browser and social-platform traffic still runs through local `socai` and Chrome.

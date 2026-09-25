@@ -38,39 +38,39 @@ The HTTP server listens on `127.0.0.1`. State-changing requests require exact sa
 
 ## Run locally
 
-Requirements: Node.js 20+, a current socai CLI, a Chrome session that can access the selected platform, and either an OpenRouter API key with Jev access or a current-source checkout configured with a loopback TypeSafe-compatible decision endpoint such as Kev.
+Requirements: Node.js 20+, a current socai CLI, a Chrome session that can access the selected platform, and either an OpenRouter API key with Jev access or a loopback TypeSafe-compatible decision endpoint such as Kev.
 
 ```bash
-npx github:socai-io/jev-social#v0.1.6 onboard
-npx github:socai-io/jev-social#v0.1.6
+npx github:socai-io/jev-social#v0.1.7 onboard
+npx github:socai-io/jev-social#v0.1.7
 ```
 
 Direct non-interactive example:
 
 ```bash
-npx github:socai-io/jev-social#v0.1.6 search "find emerging design creators on Instagram" --platform auto --limit 4
+npx github:socai-io/jev-social#v0.1.7 search "find emerging design creators on Instagram" --platform auto --limit 4
 ```
 
-The tagged v0.1.6 commands above use OpenRouter. Current source checkouts can instead set `JEV_SOCIAL_SYSTEM_ONE_URL=http://127.0.0.1:8009/v1/systemone` and `JEV_SOCIAL_SYSTEM_ONE_MODEL=kev-latest` for local Kev routing. Only an exact loopback endpoint is accepted; OpenRouter credentials are not forwarded. Set `OPENROUTER_REPORT_MODEL=off` to keep report generation on the deterministic evidence path.
+The tagged v0.1.7 release uses OpenRouter by default. Set `JEV_SOCIAL_SYSTEM_ONE_URL=http://127.0.0.1:8009/v1/systemone` and `JEV_SOCIAL_SYSTEM_ONE_MODEL=kev-latest` to switch decisions to local Kev without an OpenRouter key. Only an exact loopback endpoint is accepted; OpenRouter credentials are not forwarded. Set `OPENROUTER_REPORT_MODEL=off` to keep report generation on the deterministic evidence path.
 
 ## Install as an Agent Skill
 
-GitHub CLI 2.101 or newer can install the immutable v0.1.6 skill for Codex:
+GitHub CLI 2.101 or newer can install the immutable v0.1.7 skill for Codex:
 
 ```bash
-gh skill install socai-io/jev-social jev-social@v0.1.6 --agent codex --scope user
+gh skill install socai-io/jev-social jev-social@v0.1.7 --agent codex --scope user
 ```
 
 The cross-agent Skills CLI is also supported:
 
 ```bash
-npx skills add socai-io/jev-social --skill jev-social
+npx skills add https://github.com/socai-io/jev-social/tree/v0.1.7/skills/jev-social --skill jev-social
 ```
 
-OpenCode can install the tested v0.1.6 Skill into its natively discovered project directory:
+OpenCode can install the tested v0.1.7 Skill into its natively discovered project directory:
 
 ```bash
-npx skills add https://github.com/socai-io/jev-social/tree/v0.1.6/skills/jev-social --agent opencode --yes
+npx skills add https://github.com/socai-io/jev-social/tree/v0.1.7/skills/jev-social --agent opencode
 ```
 
 This is a standard Agent Skill that calls the local socai CLI, not an OpenCode plugin.
