@@ -47,7 +47,7 @@ try {
           jevConfigured: Boolean(resolveApiKey(config)),
           jevModel: process.env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest",
           configPath: getConfigPath(),
-          socai: await probeSocai(config),
+          socai: await probeSocai(config, process.env, undefined, { includeReadiness: true }),
         },
         null,
         2,

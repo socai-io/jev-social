@@ -13,7 +13,7 @@ import { errorPayload } from "./errors.js";
 import { loadLocalEnv } from "./env.js";
 import { saveOnboarding } from "./onboard.js";
 import { listRuns, markInterruptedRuns, readRun } from "./runs.js";
-import { probeSocai } from "./socai.js";
+import { probeSocai, unknownSocaiReadiness } from "./socai.js";
 
 const PUBLIC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
 const MEDIA_TTL_MS = 60 * 60_000;
@@ -94,11 +94,16 @@ async function handleRequest(request, response, env, mediaRegistry) {
         return sendJson(response, 200, {
           jevConfigured: false,
           jevModel: env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest",
-          socai: { installed: false, version: null, capabilities: { instagram: false, tiktok: false, linkedin: false } },
+          socai: {
+            installed: false,
+            version: null,
+            capabilities: { instagram: false, tiktok: false, linkedin: false },
+            readiness: unknownSocaiReadiness(false),
+          },
           configError: "Configuration could not be read.",
         });
       }
-      const socai = await probeSocai(config, env);
+      const socai = await probeSocai(config, env, undefined, { includeReadiness: true });
       return sendJson(response, 200, {
         jevConfigured: Boolean(resolveApiKey(config, env)),
         jevModel: env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest",
@@ -106,6 +111,7 @@ async function handleRequest(request, response, env, mediaRegistry) {
           installed: socai.installed,
           version: socai.version ?? null,
           capabilities: socai.capabilities,
+          readiness: socai.readiness,
           ...(socai.error ? { error: socai.error } : {}),
         },
       });

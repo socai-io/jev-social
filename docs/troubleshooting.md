@@ -47,7 +47,7 @@ By default (using `existing` or `managed` Chrome modes without external endpoint
 | State | What Happened | What You See | How to Resolve |
 | --- | --- | --- | --- |
 | **Missing `socai` executable** | The `socai` CLI is not installed or not discoverable at the resolved binary path. | Status indicator displays `socai unavailable`, or terminal reports `spawn ENOENT` / command not found. | On macOS and Windows, run `npx --yes github:socai-io/jev-social onboard` (or `npm start -- onboard`). On Linux, install the CLI package from source via Cargo (`cargo install --git https://github.com/socai-io/socai.git socai-cli`) and set `SOCAI_BIN`. |
-| **Browser connection failure** | `socai` cannot connect to Chrome or its DevTools protocol (CDP) endpoint. | Error indicates connection refusal (e.g. `ECONNREFUSED 127.0.0.1:9222`), socket error, or browser launch timeout. | Follow your active connection mode below. Ensure the target Chrome instance is running with remote debugging enabled and accept any remote-debugging permission prompts. Avoid blanket process-killing commands. |
+| **Browser connection failure** | `socai` cannot connect to Chrome or its DevTools protocol (CDP) endpoint. | The readiness strip shows `Chrome unavailable`, `Chrome permission needed`, `Chrome disconnected`, or `Remote browser unavailable` with a short local action. | Follow your active connection mode below. Ensure the target Chrome instance is running with remote debugging enabled and accept any remote-debugging permission prompts. Avoid blanket process-killing commands. |
 | **Login-required / challenge gate** | The platform blocked unauthenticated access with a login modal, redirect (e.g. `authwall`), or CAPTCHA. | Status displays a partial result notice with the specific gate reason (for example, `Partial results · The platform requires attention: login_required`). | Open the platform in the specific user-accessible Chrome session or profile selected by `socai` (`existing` or `managed` mode), complete authentication or challenges, and verify browsing before re-running. (If using hosted `remote` mode, switch to `existing` or `managed` mode to authenticate interactively.) |
 | **Valid empty result** | The platform loaded successfully and the search executed cleanly, but returned 0 matching records. | Evidence cards, table, and heading remain hidden. Depending on subsequent decisions, the run can finalize as `partial` (`Partial results · Jev stopped without usable evidence.`), `step_limit` (if max steps are reached), or `decision_failed` (if a subsequent model decision call fails). | The initial search executed cleanly without matching records on the platform. Broaden or rephrase your search query. (If a subsequent decision failed, verify model API connectivity). |
 | **Early decision or classification failure** | Jev encountered an error during classification or the very first action decision before any browser operations ran. | Classification failures emit an error before a run exists. A first action-decision failure saves a failed checkpoint with no captured posts. | Ensure your query is a supported read-only social research goal, specify `--platform` explicitly, or check your OpenRouter key and network connection. |
@@ -82,10 +82,32 @@ The browser API endpoint `/api/status` returns sanitized status and omits local 
       "instagram": true,
       "tiktok": true,
       "linkedin": true
+    },
+    "readiness": {
+      "schemaVersion": 1,
+      "cliAvailable": true,
+      "daemonRunning": true,
+      "daemonCompatible": true,
+      "browserConnected": true,
+      "browserState": "connected",
+      "profileMode": "existing",
+      "activeProfileMode": "existing",
+      "errorCode": null,
+      "platforms": {
+        "instagram": { "available": true, "loginState": "unknown", "operations": ["search", "get-posts"] },
+        "tiktok": { "available": true, "loginState": "unknown", "operations": ["search", "get-videos"] },
+        "linkedin": { "available": true, "loginState": "unknown", "operations": ["search", "get-posts"] }
+      }
     }
   }
 }
 ```
+
+The readiness probe is observational: it calls `socai status --json`, which does not start the daemon, launch Chrome, connect a browser, or show a permission prompt. Jev Social validates and allowlists that response before returning it. WebSocket URLs, ports, cookies, profile paths, session tokens, and the CLI's free-form `next_step` text are never exposed through `/api/status`.
+
+An older `socai` build that does not support `status --json` remains usable. The UI reports `Chrome state unknown` and recommends updating `socai`; it does not repeatedly attempt a browser connection or block a research run.
+
+When socai can identify platform authentication independently, the platform picker labels it as `(signed in)` or `(sign in)`. An `unknown` login state remains unlabeled: it is not treated as either authenticated or logged out.
 
 *(Note: Platform capabilities are build-dependent. The official social CLI requires `v0.6+` or a development build with social subcommands enabled; older tagged releases such as `v0.5.6` registered only `xhs` and `dy`, so `instagram`, `tiktok`, and `linkedin` will all probe `false`. On `v0.6+` builds, `linkedin` evaluates to `true` or `false` depending on whether that specific build enables the LinkedIn subcommand.)*
 
@@ -110,6 +132,12 @@ Expected output:
       "instagram": true,
       "tiktok": true,
       "linkedin": true
+    },
+    "readiness": {
+      "browserConnected": true,
+      "browserState": "connected",
+      "profileMode": "existing",
+      "activeProfileMode": "existing"
     }
   }
 }

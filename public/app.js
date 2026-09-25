@@ -19,6 +19,7 @@ const elements = {
   resultView: $("#result-view"),
   searchForm: $("#search-form"),
   platformNotice: $("#platform-notice"),
+  browserHint: $("#browser-hint"),
   activity: $("#activity"),
   activityTitle: $("#activity-title"),
   activityMessage: $("#activity-message"),
@@ -229,16 +230,21 @@ async function refreshStatus() {
     const view = deriveStatusView(status);
     setStatus("jev", view.jev.ready, view.jev.label);
     setStatus("socai", view.socai.ready, view.socai.label);
+    setStatus("browser", view.browser.ready, view.browser.label);
+    if (elements.browserHint) {
+      elements.browserHint.textContent = view.browser.hint;
+      elements.browserHint.classList.toggle("hidden", !view.browser.hint);
+    }
     if (view.error) showError(new Error(view.error));
 
-    updatePlatformOptions(view.capabilities);
+    updatePlatformOptions(view.capabilities, view.platforms);
     updatePromptButtons(document.querySelectorAll(".prompt-example-btn"), view.capabilities);
   } catch (error) {
     showError(error);
   }
 }
 
-function updatePlatformOptions(caps = {}) {
+function updatePlatformOptions(caps = {}, platformStatuses = {}) {
   const platformSelect = $("#platform");
   if (!platformSelect) return;
   const previousValue = platformSelect.value;
@@ -257,8 +263,17 @@ function updatePlatformOptions(caps = {}) {
         switchedToAuto = true;
       }
     } else {
-      option.title = "";
-      option.textContent = label;
+      const loginState = platformStatuses[val]?.loginState || "unknown";
+      if (loginState === "authenticated") {
+        option.title = `${label} login detected by socai`;
+        option.textContent = `${label} (signed in)`;
+      } else if (loginState === "unauthenticated") {
+        option.title = `${label} requires a login in the selected Chrome profile`;
+        option.textContent = `${label} (sign in)`;
+      } else {
+        option.title = "";
+        option.textContent = label;
+      }
     }
   }
 

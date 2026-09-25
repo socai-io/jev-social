@@ -102,6 +102,24 @@ test("/api/status returns exact sanitized shape and no leaked paths or env varia
 const args = process.argv.slice(2);
 if (args[0] === "--version") console.log("socai 0.5.6");
 else if (args[0] === "--help") console.log("socai root");
+else if (args[0] === "status" && args[1] === "--json") console.log(JSON.stringify({
+  schema_version: 1,
+  cli_available: true,
+  cli_version: "2",
+  daemon_running: true,
+  daemon_compatible: true,
+  browser_connected: false,
+  browser_state: "disconnected",
+  profile_mode: "existing",
+  active_profile_mode: null,
+  error_code: "BROWSER_ENDPOINT_UNREACHABLE",
+  next_step: "connect ws://127.0.0.1:9222/devtools/browser/private-token",
+  profile_path: "/Users/private/Chrome/Profile 1",
+  platforms: [
+    { id: "instagram", available: true, login_state: "unknown", operations: ["search", "get-posts", "/Users/private/leak"] },
+    { id: "tiktok", available: true, login_state: "unknown", operations: ["search", "get-videos"] },
+  ],
+}));
 else if (args[0] === "instagram" && args[1] === "--help") console.log("Commands: search");
 else if (args[0] === "tiktok" && args[1] === "--help") console.log("Commands: search");
 else if (args[0] === "linkedin" && args[1] === "--help") process.exitCode = 1;
@@ -132,12 +150,31 @@ else process.exitCode = 2;
           tiktok: true,
           linkedin: false,
         },
+        readiness: {
+          schemaVersion: 1,
+          cliAvailable: true,
+          daemonRunning: true,
+          daemonCompatible: true,
+          browserConnected: false,
+          browserState: "disconnected",
+          profileMode: "existing",
+          activeProfileMode: null,
+          errorCode: "BROWSER_ENDPOINT_UNREACHABLE",
+          platforms: {
+            instagram: { available: true, loginState: "unknown", operations: ["search", "get-posts"] },
+            tiktok: { available: true, loginState: "unknown", operations: ["search", "get-videos"] },
+            linkedin: { available: false, loginState: "unknown", operations: [] },
+          },
+        },
       },
     });
     const text = JSON.stringify(body);
     assert.ok(!text.includes("secret-key-123"), "API key must not leak");
     assert.ok(!text.includes(directory), "Filesystem path must not leak");
     assert.ok(!text.includes("socai-mock.mjs"), "Binary filename must not leak");
+    assert.ok(!text.includes("9222"), "Browser ports must not leak");
+    assert.ok(!text.includes("private-token"), "Browser session tokens must not leak");
+    assert.ok(!text.includes("Profile 1"), "Browser profile paths must not leak");
     assert.equal(body.configPath, undefined);
     assert.equal(body.socai.bin, undefined, "/api/status must omit bin property");
   } finally {

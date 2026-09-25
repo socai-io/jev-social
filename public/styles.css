@@ -59,6 +59,7 @@ h1 em { color: transparent; font-style: normal; -webkit-text-stroke: 1.5px var(-
 .readiness i { width: 7px; height: 7px; border: 1px solid var(--ink); border-radius: 50%; }
 .readiness i.ready { border-color: var(--green); background: var(--green); }
 .readiness b { font-weight: 500; }
+.browser-hint { padding: 7px 12px; border-top: 1px solid var(--line); background: #fff8d9; color: #454027; font: 500 10px/1.45 var(--mono); }
 .button { min-height: 38px; border: 1px solid var(--ink); padding: 0 16px; background: #fff; font-size: 12px; font-weight: 750; }
 .button.primary { margin-left: auto; color: #fff; background: var(--ink); }
 .button.primary:hover { color: var(--ink); background: var(--pink); }
