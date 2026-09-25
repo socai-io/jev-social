@@ -84,14 +84,14 @@ Node 20+, an OpenRouter key with Jev access, and a current [socai](https://githu
 Fastest path — no repository clone required. Onboarding prompts for the key and offers to install the official socai CLI when it is missing:
 
 ```bash
-npx github:socai-io/jev-social#v0.1.5 onboard
-npx github:socai-io/jev-social#v0.1.5
+npx github:socai-io/jev-social#v0.1.6 onboard
+npx github:socai-io/jev-social#v0.1.6
 ```
 
 To let Codex invoke the same browser-grounded workflow through GitHub CLI 2.101 or newer:
 
 ```bash
-gh skill install socai-io/jev-social jev-social@v0.1.5 --agent codex --scope user
+gh skill install socai-io/jev-social jev-social@v0.1.6 --agent codex --scope user
 ```
 
 Or install it from the [skills.sh directory](https://skills.sh/socai-io/jev-social/jev-social) with the cross-agent Skills CLI:
@@ -100,10 +100,10 @@ Or install it from the [skills.sh directory](https://skills.sh/socai-io/jev-soci
 npx skills add socai-io/jev-social --skill jev-social
 ```
 
-For OpenCode, install the tested v0.1.5 skill into its natively discovered project skill directory:
+For OpenCode, install the tested v0.1.6 skill into its natively discovered project skill directory:
 
 ```bash
-npx skills add https://github.com/socai-io/jev-social/tree/v0.1.5/skills/jev-social --agent opencode --yes
+npx skills add https://github.com/socai-io/jev-social/tree/v0.1.6/skills/jev-social --agent opencode --yes
 ```
 
 The skill pins the documented Jev Social CLI release, preserves its read-only and login-gate boundaries, and returns source-linked evidence instead of raw run JSON. Platform availability is checked against the installed socai CLI before a run.

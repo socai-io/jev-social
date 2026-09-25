@@ -5,6 +5,7 @@ import test from "node:test";
 const packageJson = JSON.parse(
   await readFile(new URL("../package.json", import.meta.url), "utf8"),
 );
+const releaseTag = `v${packageJson.version}`;
 const pinnedSource = `github:socai-io/jev-social#v${packageJson.version}`;
 const publicDocs = [
   ["README.md", new URL("../README.md", import.meta.url)],
@@ -32,6 +33,22 @@ test("machine-readable setup avoids command-line credentials and exposes the Age
     contents,
     new RegExp(`gh skill install socai-io/jev-social jev-social@v${packageJson.version}\\b`),
   );
+});
+
+test("package, plugin manifests, and Agent Skill identify the current release", async () => {
+  const [codexManifest, grokManifest, skill] = await Promise.all([
+    readFile(new URL("../.codex-plugin/plugin.json", import.meta.url), "utf8").then(JSON.parse),
+    readFile(new URL("../.grok-plugin/plugin.json", import.meta.url), "utf8").then(JSON.parse),
+    readFile(new URL("../skills/jev-social/SKILL.md", import.meta.url), "utf8"),
+  ]);
+
+  assert.equal(codexManifest.version, packageJson.version);
+  assert.equal(grokManifest.version, packageJson.version);
+  assert.ok(skill.includes(`release \`${releaseTag}\``));
+
+  const runtimePins = skill.match(/github:socai-io\/jev-social#[0-9a-f]{40}/g) ?? [];
+  assert.ok(runtimePins.length > 0, "the Agent Skill must pin an immutable runtime commit");
+  assert.equal(new Set(runtimePins).size, 1, "all Agent Skill commands must use one runtime commit");
 });
 
 test("the Pages artifact retains the .nojekyll marker", async () => {
