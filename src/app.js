@@ -5,6 +5,7 @@ import { availableActions, chooseAction } from "./actions.js";
 import { evidenceReport, extractEvidence, mergeEvidence, publicEvidence, resultObservation } from "./evidence.js";
 import { AppError } from "./errors.js";
 import { readConfig, resolveApiKey } from "./config.js";
+import { resolveDecisionProvider } from "./decision-provider.js";
 import { extractSearchQuery } from "./query.js";
 import {
   buildGroundedResearchReport,
@@ -31,6 +32,7 @@ export async function runSearch(
     synthesizer,
     reportChunkDelayMs = 18,
     reportFetchImpl = fetch,
+    decisionFetchImpl = fetch,
   } = {},
 ) {
   const request = query?.trim();
@@ -104,10 +106,13 @@ export async function runSearch(
   }
 
   const apiKey = resolveApiKey(config, env);
-  if (!apiKey && !client) throw new AppError("Set OPENROUTER_API_KEY first.", { code: "ONBOARDING_REQUIRED" });
+  const provider = resolveDecisionProvider(env);
+  if (!apiKey && !client && provider.kind !== "local") {
+    throw new AppError("Set OPENROUTER_API_KEY first.", { code: "ONBOARDING_REQUIRED" });
+  }
   const startedAt = Date.now();
-  const model = env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest";
-  const decisionOptions = { apiKey, model, client, signal };
+  const model = provider.model;
+  const decisionOptions = { apiKey, model, provider, client, fetchImpl: decisionFetchImpl, signal };
   await emit({ stage: "classifying", message: "Jev is choosing the social platform…" });
   const classification = await classifySearch({
     goal: request,
@@ -273,7 +278,7 @@ export async function runSearch(
     const configuredModel = String(env.OPENROUTER_REPORT_MODEL || "openai/gpt-4o-mini").trim();
     const liveSynthesizer = typeof synthesizer === "function"
       ? synthesizer
-      : !client && configuredModel.toLowerCase() !== "off"
+      : apiKey && !client && configuredModel.toLowerCase() !== "off"
         ? (safeInput) => requestOpenRouterResearchReport(safeInput, {
             apiKey,
             model: configuredModel,

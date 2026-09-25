@@ -4,6 +4,7 @@ import readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { runSearch } from "../src/app.js";
 import { getConfigPath, readConfig, resolveApiKey } from "../src/config.js";
+import { resolveDecisionProvider } from "../src/decision-provider.js";
 import { loadLocalEnv } from "../src/env.js";
 import { saveOnboarding } from "../src/onboard.js";
 import { probeSocai } from "../src/socai.js";
@@ -29,6 +30,11 @@ Configuration (normally auto-loaded from .env):
   --install                            Install/reinstall official socai CLI
   --skip-install                       Do not offer CLI installation
   --no-verify                          Save API key without a network check
+
+Local decision provider (environment only):
+  JEV_SOCIAL_SYSTEM_ONE_URL            Loopback /v1/systemone endpoint
+  JEV_SOCIAL_SYSTEM_ONE_MODEL          Model name (default: kev-latest)
+  JEV_SOCIAL_SYSTEM_ONE_TIMEOUT_MS     Timeout in ms (default/max: 120000)
 `;
 
 try {
@@ -41,11 +47,13 @@ try {
     await startServer({ port: flags.port || 8766, open: !flags.noOpen });
   } else if (command === "status") {
     const config = await readConfig();
+    const provider = resolveDecisionProvider();
     console.log(
       JSON.stringify(
         {
-          jevConfigured: Boolean(resolveApiKey(config)),
-          jevModel: process.env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest",
+          jevConfigured: provider.kind === "local" || Boolean(resolveApiKey(config)),
+          jevModel: provider.model,
+          decisionProvider: provider.kind,
           configPath: getConfigPath(),
           socai: await probeSocai(config, process.env, undefined, { includeReadiness: true }),
         },

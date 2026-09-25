@@ -12,6 +12,7 @@ export {
 } from "./socai.js";
 export { saveOnboarding, verifyOpenRouterApiKey, verifyTypesafeApiKey } from "./onboard.js";
 export { loadLocalEnv } from "./env.js";
+export { requestDecision, resolveDecisionProvider } from "./decision-provider.js";
 export { extractSearchQuery } from "./query.js";
 export {
   buildGroundedResearchReport,

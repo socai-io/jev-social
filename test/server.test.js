@@ -133,6 +133,8 @@ else process.exitCode = 2;
     SOCAI_BIN: mock,
     OPENROUTER_API_KEY: "secret-key-123",
     OPENROUTER_JEV_MODEL: "~typesafe/jev-latest",
+    JEV_SOCIAL_SYSTEM_ONE_URL: "",
+    JEV_SOCIAL_SYSTEM_ONE_TIMEOUT_MS: "",
   };
   const { server, url } = await startServer({ port: 0, open: false, env });
   try {
@@ -142,6 +144,7 @@ else process.exitCode = 2;
     assert.deepEqual(body, {
       jevConfigured: true,
       jevModel: "~typesafe/jev-latest",
+      decisionProvider: "openrouter",
       socai: {
         installed: true,
         version: "0.5.6",
@@ -177,6 +180,64 @@ else process.exitCode = 2;
     assert.ok(!text.includes("Profile 1"), "Browser profile paths must not leak");
     assert.equal(body.configPath, undefined);
     assert.equal(body.socai.bin, undefined, "/api/status must omit bin property");
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("/api/status reports a local decision provider without exposing its endpoint", async () => {
+  const env = {
+    ...process.env,
+    JEV_SOCIAL_SYSTEM_ONE_URL: "http://127.0.0.1:8009/v1/systemone",
+    JEV_SOCIAL_SYSTEM_ONE_MODEL: "kev-latest",
+  };
+  delete env.OPENROUTER_API_KEY;
+  delete env.openrouter;
+  const { server, url } = await startServer({ port: 0, open: false, env });
+  try {
+    const response = await fetch(`${url}/api/status`);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.jevConfigured, true);
+    assert.equal(body.jevModel, "kev-latest");
+    assert.equal(body.decisionProvider, "local");
+    assert.doesNotMatch(JSON.stringify(body), /127\.0\.0\.1|8009|systemone/);
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  }
+});
+
+test("/api/status rejects an unsafe local decision endpoint without echoing it", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-invalid-provider-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  await writeFile(
+    mock,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "--version") console.log("socai 0.5.6");
+else if (args[0] === "--help") console.log("socai root");
+else if (["instagram", "tiktok", "linkedin"].includes(args[0]) && args[1] === "--help") console.log("Commands: search");
+else process.exitCode = 2;
+`,
+    { mode: 0o755 },
+  );
+  const env = {
+    ...process.env,
+    SOCAI_BIN: mock,
+    JEV_SOCIAL_SYSTEM_ONE_URL: "http://example.com/v1/systemone?token=secret",
+  };
+  const { server, url } = await startServer({ port: 0, open: false, env });
+  try {
+    const response = await fetch(`${url}/api/status`);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.jevConfigured, false);
+    assert.equal(body.decisionProviderError, "Decision provider configuration is invalid.");
+    assert.equal(body.configError, undefined);
+    assert.equal(body.socai.installed, true);
+    assert.deepEqual(body.socai.capabilities, { instagram: true, tiktok: true, linkedin: true });
+    assert.doesNotMatch(JSON.stringify(body), /example\.com|token|secret/);
   } finally {
     await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
     await rm(directory, { recursive: true, force: true });

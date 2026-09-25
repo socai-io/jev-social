@@ -50,8 +50,8 @@ By default (using `existing` or `managed` Chrome modes without external endpoint
 | **Browser connection failure** | `socai` cannot connect to Chrome or its DevTools protocol (CDP) endpoint. | The readiness strip shows `Chrome unavailable`, `Chrome permission needed`, `Chrome disconnected`, or `Remote browser unavailable` with a short local action. | Follow your active connection mode below. Ensure the target Chrome instance is running with remote debugging enabled and accept any remote-debugging permission prompts. Avoid blanket process-killing commands. |
 | **Login-required / challenge gate** | The platform blocked unauthenticated access with a login modal, redirect (e.g. `authwall`), or CAPTCHA. | Status displays a partial result notice with the specific gate reason (for example, `Partial results · The platform requires attention: login_required`). | Open the platform in the specific user-accessible Chrome session or profile selected by `socai` (`existing` or `managed` mode), complete authentication or challenges, and verify browsing before re-running. (If using hosted `remote` mode, switch to `existing` or `managed` mode to authenticate interactively.) |
 | **Valid empty result** | The platform loaded successfully and the search executed cleanly, but returned 0 matching records. | Evidence cards, table, and heading remain hidden. Depending on subsequent decisions, the run can finalize as `partial` (`Partial results · Jev stopped without usable evidence.`), `step_limit` (if max steps are reached), or `decision_failed` (if a subsequent model decision call fails). | The initial search executed cleanly without matching records on the platform. Broaden or rephrase your search query. (If a subsequent decision failed, verify model API connectivity). |
-| **Early decision or classification failure** | Jev encountered an error during classification or the very first action decision before any browser operations ran. | Classification failures emit an error before a run exists. A first action-decision failure saves a failed checkpoint with no captured posts. | Ensure your query is a supported read-only social research goal, specify `--platform` explicitly, or check your OpenRouter key and network connection. |
-| **Mid-run decision failure (`decision_failed`)** | A model decision call failed after one or more actions had already executed. | Status displays `Partial results · <error message>` with status `decision_failed`; collected evidence prior to the failure is preserved. | Check OpenRouter API connectivity, ensure model quota is available, or retry the request. |
+| **Early decision or classification failure** | The configured decision provider encountered an error during classification or the first action choice before any browser operation ran. | Classification failures emit an error before a run exists. A first action-decision failure saves a failed checkpoint with no captured posts. | Ensure the goal is supported, specify `--platform` explicitly, then check the OpenRouter key or local System One server reported by status. |
+| **Mid-run decision failure (`decision_failed`)** | The decision provider failed after one or more actions had already executed. | Status displays `Partial results · <error message>` with status `decision_failed`; collected evidence prior to the failure is preserved. | Check the configured provider, preserve the partial evidence, and retry only after the provider is healthy. |
 
 ---
 
@@ -61,7 +61,7 @@ Run these diagnostic commands to verify readiness without exposing API credentia
 
 ### 1. Check Configuration & Capabilities
 
-Jev Social resolves your OpenRouter key from `OPENROUTER_API_KEY`, lowercase `openrouter` in `.env`, or saved onboarding config (`config.json`). Checking only `$OPENROUTER_API_KEY` in your shell can falsely report "missing" when a key is already configured.
+By default, Jev Social resolves an OpenRouter key from `OPENROUTER_API_KEY`, lowercase `openrouter` in `.env`, or saved onboarding config (`config.json`). A valid `JEV_SOCIAL_SYSTEM_ONE_URL` switches typed decisions to a loopback TypeSafe-compatible provider and does not require an OpenRouter key. Checking only `$OPENROUTER_API_KEY` can therefore misreport effective readiness.
 
 Query the local status endpoint to verify the effective `jevConfigured` state and platform capabilities:
 
@@ -75,6 +75,7 @@ The browser API endpoint `/api/status` returns sanitized status and omits local 
 {
   "jevConfigured": true,
   "jevModel": "~typesafe/jev-latest",
+  "decisionProvider": "openrouter",
   "socai": {
     "installed": true,
     "version": "0.6.0",
@@ -123,6 +124,7 @@ Expected output:
 {
   "jevConfigured": true,
   "jevModel": "~typesafe/jev-latest",
+  "decisionProvider": "openrouter",
   "configPath": "/home/user/.jev-social/config.json",
   "socai": {
     "installed": true,
@@ -146,7 +148,29 @@ Expected output:
 > [!NOTE]
 > **Privacy note:** `npm start -- status` outputs `configPath` and `socai.bin` for local operator diagnostics. If sharing CLI output in public issues or chat, redact these local filesystem paths. The browser API endpoint (`/api/status`) automatically keeps paths sanitized.
 
-### 2. Verify the Resolved `socai` Binary
+### 2. Use a Local Kev Decision Server
+
+Kev exposes the TypeSafe-compatible endpoint Jev Social needs. Start it separately, then set the exact loopback endpoint and model:
+
+```bash
+git clone https://github.com/jaredpalmer/kev.git
+cd kev
+uv sync --extra serve
+uv run --extra serve python -m kev.serve --run jaredpalmer/kev-4b --port 8009
+```
+
+```bash
+export JEV_SOCIAL_SYSTEM_ONE_URL=http://127.0.0.1:8009/v1/systemone
+export JEV_SOCIAL_SYSTEM_ONE_MODEL=kev-latest
+export JEV_SOCIAL_SYSTEM_ONE_TIMEOUT_MS=120000
+export OPENROUTER_REPORT_MODEL=off
+npm start -- status
+npm start
+```
+
+The sanitized status should report `"decisionProvider": "local"`, `"jevModel": "kev-latest"`, and `"jevConfigured": true` without showing the endpoint or port. The endpoint must use plain loopback HTTP and the exact `/v1/systemone` path. Jev Social refuses remote hosts, redirects, embedded credentials, query strings, and fragments. Local decisions use a 120-second default and maximum timeout; set `JEV_SOCIAL_SYSTEM_ONE_TIMEOUT_MS` to a lower integer value when needed. `OPENROUTER_REPORT_MODEL=off` prevents a separately configured OpenRouter key from being used for optional report synthesis.
+
+### 3. Verify the Resolved `socai` Binary
 
 Jev Social resolves the `socai` binary in the following order:
 1. `SOCAI_BIN` environment variable or `socaiBin` in `~/.jev-social/config.json`.
@@ -161,7 +185,7 @@ Because resolution is not pinned to a single binary and may differ from what is 
 /path/from-status --version
 ```
 
-### 3. Installing or Reinstalling `socai`
+### 4. Installing or Reinstalling `socai`
 
 - **macOS & Windows**: Run automated onboarding to download and install the official release:
   ```bash

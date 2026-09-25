@@ -38,7 +38,7 @@ The HTTP server listens on `127.0.0.1`. State-changing requests require exact sa
 
 ## Run locally
 
-Requirements: Node.js 20+, an OpenRouter API key with Jev access, a current socai CLI, and a Chrome session that can access the selected platform.
+Requirements: Node.js 20+, a current socai CLI, a Chrome session that can access the selected platform, and either an OpenRouter API key with Jev access or a current-source checkout configured with a loopback TypeSafe-compatible decision endpoint such as Kev.
 
 ```bash
 npx github:socai-io/jev-social#v0.1.6 onboard
@@ -50,6 +50,8 @@ Direct non-interactive example:
 ```bash
 npx github:socai-io/jev-social#v0.1.6 search "find emerging design creators on Instagram" --platform auto --limit 4
 ```
+
+The tagged v0.1.6 commands above use OpenRouter. Current source checkouts can instead set `JEV_SOCIAL_SYSTEM_ONE_URL=http://127.0.0.1:8009/v1/systemone` and `JEV_SOCIAL_SYSTEM_ONE_MODEL=kev-latest` for local Kev routing. Only an exact loopback endpoint is accepted; OpenRouter credentials are not forwarded. Set `OPENROUTER_REPORT_MODEL=off` to keep report generation on the deterministic evidence path.
 
 ## Install as an Agent Skill
 
@@ -79,6 +81,7 @@ This is a standard Agent Skill that calls the local socai CLI, not an OpenCode p
 - The published 63.969-second report is one recorded local run, not a benchmark or speed guarantee.
 - Jev Social does not bypass login requirements, CAPTCHA, rate limits, or access controls.
 - Captured social content is untrusted evidence, never executable instructions.
+- Local System One routing accepts only plain loopback HTTP, rejects redirects, and keeps the same typed-choice validation as OpenRouter routing.
 - Search-card claims and captions are not independently verified unless the report explicitly says otherwise.
 
 ## Project links
