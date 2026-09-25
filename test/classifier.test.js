@@ -29,6 +29,8 @@ test("classifySearch routes a search with Jev's structured answer", async () => 
 
   assert.equal(result.platform, "tiktok");
   assert.equal(result.route, "tiktok_search");
+  assert.equal(result.modelVerified, true);
+  assert.ok(Number.isSafeInteger(result.elapsedMs));
   assert.equal(request.state.requested_platform, "tiktok");
   assert.equal(request.questions.route.type, "choice");
 });
@@ -136,9 +138,28 @@ test("classifySearch fails closed on a malformed Jev decision", async () => {
       return { answers: { route: { type: "choice", choice: "tiktok_search" } } };
     },
   };
+  await assert.rejects(classifySearch({ goal: "find creators", client }), (error) => {
+    assert.equal(error.code, "INVALID_JEV_RESPONSE");
+    assert.ok(Number.isSafeInteger(error.details?.elapsedMs));
+    assert.equal(error.details?.model, "~typesafe/jev-latest");
+    return true;
+  });
+});
+
+test("failed Jev calls preserve monotonic attempt time without leaking provider details", async () => {
   await assert.rejects(
-    classifySearch({ goal: "find creators", client }),
-    (error) => error.code === "INVALID_JEV_RESPONSE",
+    classifySearch({
+      goal: "find creators",
+      model: "typesafe/jev-pinned",
+      client: { async systemOne() { throw new Error("private provider detail"); } },
+    }),
+    (error) => {
+      assert.equal(error.code, "JEV_UNAVAILABLE");
+      assert.ok(Number.isSafeInteger(error.details?.elapsedMs));
+      assert.equal(error.details?.model, "typesafe/jev-pinned");
+      assert.equal(error.details?.modelVerified, false);
+      return true;
+    },
   );
 });
 

@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
 import { classifySearch } from "./classifier.js";
 import { availableActions, chooseAction } from "./actions.js";
@@ -120,15 +121,32 @@ export async function runSearch(
     capabilities,
     ...decisionOptions,
   });
-  if (!classification.platform) throw new AppError("This request is not a supported read-only social task.", { code: "UNSUPPORTED_TASK" });
-  if (classification.confidence < 0.35) throw new AppError("Jev is uncertain about the platform. Select one explicitly.", { code: "LOW_CLASSIFICATION_CONFIDENCE" });
+  const classificationDetails = {
+    elapsedMs: classification.elapsedMs,
+    model: classification.model,
+    modelVerified: classification.modelVerified,
+  };
+  if (!classification.platform) {
+    throw new AppError("This request is not a supported read-only social task.", {
+      code: "UNSUPPORTED_TASK",
+      details: classificationDetails,
+    });
+  }
+  if (classification.confidence < 0.35) {
+    throw new AppError("Jev is uncertain about the platform. Select one explicitly.", {
+      code: "LOW_CLASSIFICATION_CONFIDENCE",
+      details: classificationDetails,
+    });
+  }
   const selectedPlatform = classification.platform;
   const commands = await actionCapabilities({ config, env, platform: selectedPlatform, signal, capabilities });
   const searchQuery = extractSearchQuery(request);
   const createdAt = new Date().toISOString();
   const id = `${createdAt.replace(/[-:.TZ]/g, "").slice(0, 14)}-${crypto.randomBytes(3).toString("hex")}`;
   let items = [];
+  let downloadItems = [];
   const actions = [];
+  const decisionFailures = [];
   const executions = [];
   let status = "running";
   let stopReason = "Research is still in progress.";
@@ -157,10 +175,13 @@ export async function runSearch(
       requestedPlatform: platform, platform: selectedPlatform,
       classification: publicEvidence(classification),
       actions: actions.map(({ command: _command, ...entry }) => publicEvidence(entry)),
+      decisionFailures: publicEvidence(decisionFailures),
       status, stopReason: publicStopReason, maxSteps,
       socaiExitCode: executions.at(-1)?.exitCode ?? null,
       socaiElapsedMs: executions.reduce((sum, execution) => sum + execution.elapsedMs, 0),
-      jevElapsedMs: classification.elapsedMs + actions.reduce((sum, entry) => sum + (entry.jevElapsedMs || 0), 0),
+      jevElapsedMs: classification.elapsedMs
+        + actions.reduce((sum, entry) => sum + (entry.jevElapsedMs || 0), 0)
+        + decisionFailures.reduce((sum, entry) => sum + entry.elapsedMs, 0),
       elapsedMs: Date.now() - startedAt,
       result: { ok: status === "completed", query: publicQuery, items: publicItems },
       report,
@@ -187,6 +208,14 @@ export async function runSearch(
       try {
         decision = await chooseAction({ goal: request, platform: selectedPlatform, actions: candidates, history: actions, items, limit, remainingSteps: maxSteps - step, ...decisionOptions });
       } catch (error) {
+        const elapsedMs = error?.details?.elapsedMs;
+        if (Number.isSafeInteger(elapsedMs) && elapsedMs >= 0) {
+          decisionFailures.push({
+            elapsedMs,
+            model: error.details.model || model,
+            modelVerified: Boolean(error.details.modelVerified),
+          });
+        }
         if (!actions.length || signal?.aborted) throw error;
         status = "decision_failed";
         stopReason = safeProgress(error.message) || "Jev could not choose another safe operation.";
@@ -195,7 +224,8 @@ export async function runSearch(
       const action = decision.action;
       const entry = {
         step: step + 1, action, confidence: decision.confidence,
-        model: decision.model, usage: decision.usage, jevElapsedMs: decision.elapsedMs,
+        model: decision.model, modelVerified: decision.modelVerified,
+        usage: decision.usage, jevElapsedMs: decision.elapsedMs,
         status: "selected",
       };
       activeEntry = entry;
@@ -211,6 +241,7 @@ export async function runSearch(
       await checkpoint();
       const stage = action.downloadMedia ? "downloading" : action.kind === "search" ? "searching" : "reading";
       await emit({ stage, message: action.label, step: step + 1, action: { kind: action.kind, target: action.target } });
+      const actionStartedAt = performance.now();
       try {
         const execution = await runSocaiAction({
           action, config, env, signal,
@@ -222,9 +253,15 @@ export async function runSearch(
         await flushProgress();
         executions.push(execution);
         const captured = extractEvidence(execution.data, action);
+        if (action.downloadMedia) downloadItems = mergeEvidence(downloadItems, captured);
         items = mergeEvidence(items, captured);
         const observation = resultObservation(execution.data, captured);
-        Object.assign(entry, { command: execution.command, elapsedMs: execution.elapsedMs, observation, status: observation.ok ? "completed" : "failed" });
+        Object.assign(entry, {
+          command: execution.command,
+          elapsedMs: Math.max(0, Math.round(performance.now() - actionStartedAt)),
+          observation,
+          status: observation.ok ? "completed" : "failed",
+        });
         if (observation.blocked) {
           status = "blocked";
           stopReason = `The platform requires attention: ${observation.reason || observation.status || "login or access check"}.`;
@@ -236,7 +273,11 @@ export async function runSearch(
       } catch (error) {
         if (error?.name === "AbortError") throw error;
         signal?.throwIfAborted();
-        Object.assign(entry, { status: "failed", observation: { ok: false, code: error.code, error: safeProgress(error.message) || "Browser operation failed." } });
+        Object.assign(entry, {
+          elapsedMs: Math.max(0, Math.round(performance.now() - actionStartedAt)),
+          status: "failed",
+          observation: { ok: false, code: error.code, error: safeProgress(error.message) || "Browser operation failed." },
+        });
         await checkpoint();
         activeEntry = undefined;
         await emit({ stage: "planning", message: "The operation failed. Jev is considering the remaining options." });
@@ -332,7 +373,7 @@ export async function runSearch(
     throw error;
   }
   const stored = await checkpoint();
-  privateRunMedia.set(stored, { items });
+  privateRunMedia.set(stored, { items, downloadItems });
   await emit({ stage: "complete", status, message: status === "completed" ? "Evidence ready." : `Partial evidence saved. ${stopReason}` });
   return stored;
 }

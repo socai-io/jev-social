@@ -1,6 +1,60 @@
-# Benchmark row contract
+# Reproducible benchmark
 
-`schema.js` validates one privacy-safe row for the reproducible live benchmark proposed in [#32](https://github.com/socai-io/jev-social/issues/32). It does not run a browser, call Jev, or collect live measurements.
+The benchmark tools implement the collection and aggregation protocol tracked in [#24](https://github.com/socai-io/jev-social/issues/24). The strict row contract was delivered in [#32](https://github.com/socai-io/jev-social/issues/32). No live measurements or performance claims are included in the repository yet.
+
+Three fixed public-research tasks live under `benchmark/tasks/`: one each for Instagram, TikTok, and LinkedIn. Do not edit a task between repetitions. Create a new task ID when the goal, result limit, or step budget changes.
+
+## Collect a run
+
+Use a compatible `socai CLI`, an accessible browser profile, and either OpenRouter Jev or an explicit loopback System One endpoint. Pin the exact values recorded in the row:
+
+```bash
+npm run --silent benchmark:run -- \
+  --task benchmark/tasks/instagram.json \
+  --jev-model typesafe/jev-1.13-20260917 \
+  --socai-version 0.6.0 \
+  --socai-commit 0123456789abcdef0123456789abcdef01234567 \
+  --profile-mode existing \
+  --region cn-east \
+  --condition cold >> benchmark-rows.ndjson
+```
+
+The command writes exactly one validated NDJSON row to stdout. Stage names go to stderr. It never writes the goal, evidence text, source URLs, local paths, browser endpoints, account identifiers, or credentials into a row. Runtime failures and partial runs remain in the dataset.
+
+An installed package also exposes the same collector as `jev-social-benchmark`. `SIGINT` and `SIGTERM` stop the active operation through its abort signal and preserve an `interrupted` row before the process exits.
+
+Run each exact task/environment group at least ten times. A shell loop is acceptable because each invocation emits one row:
+
+```bash
+for run in $(seq 1 10); do
+  npm run --silent benchmark:run -- \
+    --task benchmark/tasks/instagram.json \
+    --jev-model typesafe/jev-1.13-20260917 \
+    --socai-version 0.6.0 \
+    --socai-commit 0123456789abcdef0123456789abcdef01234567 \
+    --profile-mode existing \
+    --region cn-east \
+    --condition warm >> benchmark-rows.ndjson
+done
+```
+
+`cold` means the first run after restarting the browser/CLI research session and clearing only documented application caches. `warm` means an immediate repeat in the same browser profile without clearing caches. Never clear browser cookies, login state, or personal data for this benchmark. Record a stable, non-identifying region label and describe its meaning beside any published dataset.
+
+The runner requires `socai --version` to return the declared version and requires every successful decision response to report the immutable model supplied by `--jev-model`. Floating aliases such as `jev-latest` and `kev-latest` are rejected. Build or install `socai` from the declared commit before collecting; current CLI metadata does not expose a verifiable build commit, so the operator remains responsible for that pin. `--profile-mode` records the browser setup used for the run; it does not create or modify a browser profile.
+
+Jev and browser-operation component timers use a monotonic clock, including failed attempts. For TikTok, `timing_ms.media` is the full elapsed time of each `socai` operation that requested a download. It can overlap `timing_ms.socai_browser` and is an upper bound on download-only work. Media counts and bytes include only recognized media files tied to the explicit download target and resolved below configured `socai` run roots; paths never enter the row.
+
+## Generate the summary
+
+```bash
+npm run --silent benchmark:summarize -- --input benchmark-rows.ndjson > benchmark-summary.md
+```
+
+The generator validates every row before aggregation, rejects duplicate run IDs, groups only exact task and environment matches, uses nearest-rank p50/p95, and reports success, partial, failed, failure rate, evidence coverage, and non-success reasons. A summary is `READY` only when every included group has at least ten distinct rows. Invalid rows fail the command instead of disappearing.
+
+## Row contract
+
+`schema.js` validates one privacy-safe row:
 
 ```js
 import { validateBenchmarkRow } from "jev-social/benchmark/schema";
@@ -28,4 +82,4 @@ Use these stable terminal mappings:
 
 Successful rows use `goal_satisfied` with a null failure category.
 
-Use `fixtures/valid-row.json` only as synthetic test data. Live collection, aggregation, the coverage rubric, and publication of benchmark results remain tracked in #32.
+Use `fixtures/valid-row.json` only as synthetic test data. Publishing live rows and a dated comparison table still requires the full coverage and review gate in #24.

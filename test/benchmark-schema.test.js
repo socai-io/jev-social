@@ -180,7 +180,7 @@ test("requires opaque IDs and pinned socai metadata", () => {
   const canonical = clone();
   canonical.socai_version = "v0.6.0-beta.1+sha.abcdef";
   canonical.socai_commit = canonical.socai_commit.toUpperCase();
-  canonical.jev_model = "typesafe/jev-latest:free";
+  canonical.jev_model = "typesafe/jev-1.13-20260917:free";
   const normalized = validateBenchmarkRow(canonical);
   assert.equal(normalized.socai_version, "0.6.0-beta.1+sha.abcdef");
   assert.equal(normalized.socai_commit, canonical.socai_commit.toLowerCase());
@@ -189,6 +189,15 @@ test("requires opaque IDs and pinned socai metadata", () => {
   const nestedModel = clone();
   nestedModel.jev_model = "org/team/jev";
   assert.equal(validateBenchmarkRow(nestedModel).jev_model, nestedModel.jev_model);
+
+  for (const value of ["~typesafe/jev-latest", "typesafe/jev-latest:free", "kev-latest"]) {
+    const row = clone();
+    row.jev_model = value;
+    assert.throws(
+      () => validateBenchmarkRow(row),
+      (error) => error instanceof BenchmarkRowValidationError && error.path === "jev_model",
+    );
+  }
 });
 
 test("keeps outcome and stop state consistent", () => {
@@ -300,9 +309,15 @@ test("keeps downloaded media counts possible and TikTok-only", () => {
   assert.equal(validateBenchmarkRow(tiktokDownload).evidence.downloaded_media_count, 1);
 });
 
-test("the packaged benchmark schema has an explicit import path", async () => {
+test("the packaged benchmark tools have explicit import paths", async () => {
   const packaged = await import("jev-social/benchmark/schema");
+  const runner = await import("jev-social/benchmark/run");
+  const summary = await import("jev-social/benchmark/summary");
   assert.equal(packaged.validateBenchmarkRow, validateBenchmarkRow);
+  assert.equal(typeof runner.buildBenchmarkRow, "function");
+  assert.equal(typeof runner.executeBenchmark, "function");
+  assert.equal(typeof runner.runBenchmarkCli, "function");
+  assert.equal(typeof summary.summarizeBenchmarkRows, "function");
 });
 
 test("the package contains only the intended benchmark artifacts", () => {
@@ -324,7 +339,12 @@ test("the package contains only the intended benchmark artifacts", () => {
     assert.deepEqual(files, [
       "benchmark/fixtures/valid-row.json",
       "benchmark/README.md",
+      "benchmark/run.js",
       "benchmark/schema.js",
+      "benchmark/summary.js",
+      "benchmark/tasks/instagram.json",
+      "benchmark/tasks/linkedin.json",
+      "benchmark/tasks/tiktok.json",
     ]);
   } finally {
     rmSync(cache, { recursive: true, force: true });

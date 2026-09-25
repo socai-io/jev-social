@@ -306,6 +306,14 @@ export const validateBenchmarkRow = (value) => {
     max: 40,
     pattern: /^[a-f0-9]{7,40}$/i,
   }).toLowerCase();
+  const jevModel = cleanString(value.jev_model, "jev_model", {
+    max: 128,
+    pattern:
+      /^~?[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*){0,3}(?::[A-Za-z0-9][A-Za-z0-9._-]*)?$/,
+  });
+  if (/(?:^~|(?:^|[/_.-])latest(?=$|[:/_.-]))/i.test(jevModel)) {
+    fail("jev_model", "must be an immutable model identifier, not a latest alias");
+  }
 
   return {
     schema_version: integer(value.schema_version, "schema_version", { min: 1, max: 1 }),
@@ -315,11 +323,7 @@ export const validateBenchmarkRow = (value) => {
     ended_at: endedAt,
     platform,
     outcome,
-    jev_model: cleanString(value.jev_model, "jev_model", {
-      max: 128,
-      pattern:
-        /^~?[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*){0,3}(?::[A-Za-z0-9][A-Za-z0-9._-]*)?$/,
-    }),
+    jev_model: jevModel,
     socai_version: socaiVersion,
     socai_commit: socaiCommit,
     result_limit: integer(value.result_limit, "result_limit", { min: 1, max: 100 }),

@@ -1,5 +1,6 @@
 import { AppError } from "./errors.js";
 import { requestDecision } from "./decision-provider.js";
+import { performance } from "node:perf_hooks";
 
 export const SUPPORTED_PLATFORMS = new Set(["instagram", "tiktok", "linkedin"]);
 const ROUTE_TO_PLATFORM = {
@@ -94,7 +95,13 @@ export async function classifySearch({
       `Jev route '${selected}' conflicts with the explicitly selected ${normalizedPlatform} platform.`,
       {
         code: "JEV_ROUTE_MISMATCH",
-        details: { requestedPlatform: normalizedPlatform, selectedRoute: selected },
+        details: {
+          requestedPlatform: normalizedPlatform,
+          selectedRoute: selected,
+          elapsedMs: decision.elapsedMs,
+          model: decision.model,
+          modelVerified: decision.modelVerified,
+        },
       },
     );
   }
@@ -103,17 +110,51 @@ export async function classifySearch({
 
 export async function requestChoice({ request, key, apiKey, provider, client, fetchImpl = fetch, signal }) {
   signal?.throwIfAborted();
-  const startedAt = Date.now();
+  const startedAt = performance.now();
   let response;
   try {
     response = client
       ? await client.systemOne(request, { signal })
       : await requestDecision({ provider, apiKey, request, fetchImpl, signal });
   } catch (error) {
-    signal?.throwIfAborted();
-    throw new AppError(`Jev decision failed: ${error.message}`, { code: "JEV_UNAVAILABLE", status: 502 });
+    const details = {
+      elapsedMs: Math.max(0, Math.round(performance.now() - startedAt)),
+      model: request.model,
+      modelVerified: false,
+    };
+    if (signal?.aborted || error?.name === "AbortError") {
+      const interrupted = new AppError("Jev decision was interrupted.", {
+        code: "JEV_ABORTED",
+        status: 499,
+        details,
+      });
+      interrupted.name = "AbortError";
+      throw interrupted;
+    }
+    throw new AppError(`Jev decision failed: ${error.message}`, {
+      code: "JEV_UNAVAILABLE",
+      status: 502,
+      details,
+    });
   }
-  signal?.throwIfAborted();
+  if (signal?.aborted) {
+    const interrupted = new AppError("Jev decision was interrupted.", {
+      code: "JEV_ABORTED",
+      status: 499,
+      details: {
+        elapsedMs: Math.max(0, Math.round(performance.now() - startedAt)),
+        model: request.model,
+        modelVerified: false,
+      },
+    });
+    interrupted.name = "AbortError";
+    throw interrupted;
+  }
+  const elapsedMs = Math.max(0, Math.round(performance.now() - startedAt));
+  const resolvedModel = typeof response?.model === "string" && response.model.trim()
+    ? response.model.trim()
+    : request.model;
+  const modelVerified = typeof response?.model === "string" && Boolean(response.model.trim());
   const answer = response?.answers?.[key];
   const selected = answer?.choice;
   const confidence = answer?.confidence;
@@ -138,14 +179,16 @@ export async function requestChoice({ request, key, apiKey, provider, client, fe
     throw new AppError("Jev returned an invalid decision response.", {
       code: "INVALID_JEV_RESPONSE",
       status: 502,
+      details: { elapsedMs, model: resolvedModel, modelVerified },
     });
   }
   return {
     choice: selected,
     confidence,
     probabilities,
-    model: response.model || request.model,
+    model: resolvedModel,
+    modelVerified,
     usage: response.usage || {},
-    elapsedMs: Date.now() - startedAt,
+    elapsedMs,
   };
 }
