@@ -9,6 +9,12 @@ const packageJson = JSON.parse(
 const releaseTag = `v${packageJson.version}`;
 const pinnedSource = `github:socai-io/jev-social#v${packageJson.version}`;
 const pinnedSkillSource = `https://github.com/socai-io/jev-social/tree/v${packageJson.version}/skills/jev-social`;
+const releaseCommit = execFileSync(
+  "git",
+  ["rev-parse", `${releaseTag}^{commit}`],
+  { cwd: new URL("..", import.meta.url), encoding: "utf8" },
+).trim();
+const pinnedOpenClawSkillSource = `https://github.com/socai-io/jev-social/tree/${releaseCommit}/skills/jev-social`;
 const kevRepoCommit = "2855ba2a55a80579176a459f78b95d03548cabb5";
 const kevModelRevision = "139fdd94f1b6a6ad80cc15e08fcb99cac885a101";
 const pinnedKevCommands = [
@@ -83,7 +89,7 @@ test("machine-readable setup avoids command-line credentials and exposes the Age
   );
 });
 
-test("cross-agent Skill installers use the tagged release", async () => {
+test("cross-agent Skill installers use an immutable release source", async () => {
   for (const [name, url] of publicDocs) {
     const contents = await readFile(url, "utf8");
     assert.doesNotMatch(
@@ -92,9 +98,26 @@ test("cross-agent Skill installers use the tagged release", async () => {
       `${name} must not install the mutable default branch`,
     );
     for (const command of contents.match(/npx skills add [^\n<`]*/g) ?? []) {
-      assert.match(command, new RegExp(pinnedSkillSource.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+      assert.ok(
+        command.includes(pinnedSkillSource) || command.includes(pinnedOpenClawSkillSource),
+        `${name} must pin the release tag or its exact commit`,
+      );
     }
   }
+});
+
+test("OpenClaw setup uses the verified immutable release Skill command", async () => {
+  const expected = `npx skills add ${pinnedOpenClawSkillSource} --skill jev-social --agent openclaw --copy`;
+  const [readme, llms, landing] = await Promise.all([
+    readFile(new URL("../README.md", import.meta.url), "utf8"),
+    readFile(new URL("../site/llms.txt", import.meta.url), "utf8"),
+    readFile(new URL("../site/index.html", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(readme, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(llms, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(llms, /standard Agent Skill[\s\S]*not an OpenCode or OpenClaw plugin/i);
+  assert.match(landing, /Codex, OpenCode, or OpenClaw/);
 });
 
 test("package, plugin manifests, and Agent Skill identify the current release", async () => {

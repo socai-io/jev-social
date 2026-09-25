@@ -112,6 +112,12 @@ For OpenCode, install the tested v0.1.8 skill into its natively discovered proje
 npx skills add https://github.com/socai-io/jev-social/tree/v0.1.8/skills/jev-social --agent opencode
 ```
 
+For OpenClaw, install the v0.1.8 skill from its immutable release commit into the current workspace:
+
+```bash
+npx skills add https://github.com/socai-io/jev-social/tree/c411ae1532dd37ab94f8164f13552ed05f4c9ecc/skills/jev-social --skill jev-social --agent openclaw --copy
+```
+
 The skill pins the documented Jev Social CLI release, preserves its read-only and login-gate boundaries, and returns source-linked evidence instead of raw run JSON. Platform availability is checked against the installed socai CLI before a run.
 
 To work from a source checkout instead:
