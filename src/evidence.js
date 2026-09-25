@@ -70,17 +70,29 @@ export function publicEvidence(value) {
   const clean = {};
   for (const [key, child] of Object.entries(value)) {
     if (LOCAL_PATH_KEY.test(key) || PRIVATE_EVIDENCE_KEY.test(key)) continue;
+    if (/(?:^|_)browser_url$/i.test(key) && typeof child === "string" && /^\/media\/[A-Za-z0-9_-]+$/.test(child)) {
+      clean[key] = child;
+      continue;
+    }
     const next = publicEvidence(child);
     if (next !== undefined) clean[key] = next;
   }
   return clean;
 }
 
-function redactLocalPaths(value) {
-  return value
+export function redactLocalPaths(value) {
+  return String(value || "")
+    .replace(/\b((?:run_dir|local_path|output_dir|artifact_path|report_path)\s*[:=]\s*)(?!\[redacted path\])(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s\r\n]+)/gi, "$1[redacted path]")
     .replace(/file:\/\/\/[^\s"'`<>)\]}]+/gi, "[redacted path]")
     .replace(/\b[A-Za-z]:[\\/][^\s"'`<>)\]}\r\n]+/g, "[redacted path]")
-    .replace(/(^|[\s("'`])\/(?:Users|home|tmp|var|private|etc|usr|opt|bin|Windows|Program Files)\/[^\s"'`<>)\]}\r\n]*/gi, "$1[redacted path]");
+    .replace(/(^|[\s("'`])\\\\[^\\\s"'`<>)\]}\r\n]+(?:\\[^\\\s"'`<>)\]}\r\n]+)+/g, "$1[redacted path]")
+    .replace(/(^|[\s("'`])(?:~[\\/]|\.{1,2}[\\/])[^\s"'`<>)\]}\r\n]*/g, "$1[redacted path]")
+    // File-like POSIX paths may contain spaces. Requiring a short extension
+    // avoids treating ordinary prose or HTTP URL paths as filesystem data.
+    .replace(/(^|[\s("'`=])(\/(?!\/)(?:[^/\r\n"'`<>\[\]{}]+\/)*[^/\r\n"'`<>\[\]{}]*?\.[A-Za-z0-9]{1,10})(?=$|[\s),;:!?\]}])/g, "$1[redacted path]")
+    .replace(/(^|[\s("'`=])((?:[A-Za-z0-9._~-]+\/)+[A-Za-z0-9._~ -]+\.[A-Za-z0-9]{1,10})(?=$|[\s),;:!?\]}])/g, "$1[redacted path]")
+    // Also cover extensionless absolute paths, including a single component.
+    .replace(/(^|[\s("'`=])(\/(?!\/)[^\s"'`<>)\]}\r\n,;:!?]+)/g, "$1[redacted path]");
 }
 
 export function evidenceReport({ request, platform, items, actions, status, stopReason }) {

@@ -123,17 +123,22 @@ export function sanitizeReportMarkdown(raw) {
   // Redact file:// URLs
   text = text.replace(/file:\/\/\/[^\s"'`<>)]+/gi, "[redacted path]");
 
+  // Redact path-valued fields even when the value is relative.
+  text = text.replace(/\b((?:run_dir|local_path|output_dir|artifact_path|report_path)\s*[:=]\s*)(?!\[redacted path\])(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s\r\n]+)/gi, "$1[redacted path]");
+
   // Redact Windows absolute paths
   text = text.replace(/\b[A-Za-z]:\\[^\s"'`<>)\r\n]+/g, "[redacted path]");
   text = text.replace(/\b[A-Za-z]:\/[^\s"'`<>)\r\n]+/g, "[redacted path]");
 
-  // Redact Unix absolute paths in common roots
-  text = text.replace(/(^|[\s("'`])(\/(?:Users|home|tmp|var|private|etc|usr|opt|bin|Windows|Program Files)\/[^\s"'`<>)\r\n]*)/gi, (match, prefix) => {
-    return `${prefix}[redacted path]`;
-  });
-
-  // Redact common path variable assignments
-  text = text.replace(/\b((?:run_dir|local_path|output_dir|artifact_path|report_path)\s*[:=]\s*)([^\s\r\n]+)/gi, "$1[redacted path]");
+  // Redact UNC and home/traversal paths.
+  text = text.replace(/(^|[\s("'`])\\\\[^\\\s"'`<>)\r\n]+(?:\\[^\\\s"'`<>)\r\n]+)+/g, "$1[redacted path]");
+  text = text.replace(/(^|[\s("'`])(?:~[\\/]|\.{1,2}[\\/])[^\s"'`<>)\r\n]*/g, "$1[redacted path]");
+  // File-like POSIX paths may contain spaces; relative file paths are private
+  // too. The extension requirement keeps HTTP URL paths and prose intact.
+  text = text.replace(/(^|[\s("'`=])(\/(?!\/)(?:[^/\r\n"'`<>\[\]{}]+\/)*[^/\r\n"'`<>\[\]{}]*?\.[A-Za-z0-9]{1,10})(?=$|[\s),;:!?\]}])/g, "$1[redacted path]");
+  text = text.replace(/(^|[\s("'`=])((?:[A-Za-z0-9._~-]+\/)+[A-Za-z0-9._~ -]+\.[A-Za-z0-9]{1,10})(?=$|[\s),;:!?\]}])/g, "$1[redacted path]");
+  // Cover extensionless absolute paths, including a single component.
+  text = text.replace(/(^|[\s("'`=])(\/(?!\/)[^\s"'`<>)\]}\r\n,;:!?]+)/g, "$1[redacted path]");
 
   return text;
 }

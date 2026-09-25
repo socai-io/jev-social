@@ -3,6 +3,7 @@ import {
   getReportMarkdown,
   isReportDownloadable,
 } from "./report-download.js";
+import { isFinalReportEvent, mergeReportEvent } from "./report-stream.js";
 import {
   mediaPreviewCandidates,
   nextPreviewCandidate,
@@ -121,6 +122,10 @@ function handleStreamEvent(event) {
     showLiveEvidence(event.items);
     return;
   }
+  if (event.stage === "report") {
+    showLiveReport(event);
+    return;
+  }
   const titles = {
     classifying: "Jev is routing the request",
     planning: "Jev is choosing the next step",
@@ -210,7 +215,7 @@ async function restoreRunFromRoute() {
     if (location.hash !== requestedHash) return;
     history.replaceState({ view: "results", runId: id }, "", `${location.pathname}${location.search}${resultHash(id)}`);
     renderRun(run);
-    if (run.status === "running") {
+    if (runNeedsPolling(run)) {
       restorePoll = setTimeout(() => void restoreRunFromRoute(), 750);
     }
   } catch (error) {
@@ -316,13 +321,22 @@ function clearError() {
 
 function renderRun(run) {
   showResultView();
-  elements.activity.classList.add("hidden");
-  elements.resultView.classList.remove("has-live-evidence", "is-running");
+  const reportInProgress = ["pending", "generating", "streaming"].includes(run.reportStatus);
+  if (reportInProgress) {
+    showActivity("socai is researching the captured evidence", "Writing the evidence-grounded report.");
+  } else {
+    elements.activity.classList.add("hidden");
+  }
+  const hadLiveEvidence = elements.resultView.classList.contains("has-live-evidence");
+  elements.resultView.classList.remove("has-live-evidence");
+  elements.resultView.classList.toggle("is-running", reportInProgress);
   elements.reportSection.classList.remove("hidden");
-  if (run.status === "running") startTimer(run.elapsedMs);
+  if (run.status === "running" || reportInProgress) startTimer(run.elapsedMs);
   else stopTimer(run.elapsedMs);
   $("#result-title").textContent = run.request || run.query || "Social results";
-  $("#run-status").textContent = run.status === "running"
+  $("#run-status").textContent = reportInProgress
+    ? "Research report in progress · restored from the latest checkpoint"
+    : run.status === "running"
     ? "Research in progress · restored from the latest checkpoint"
     : run.status && run.status !== "completed" ? `Partial results · ${run.stopReason}` : "";
   $("#action-list").replaceChildren(...(run.actions || []).map((step) => element("li", "", `${step.action.label} · ${step.status}`)));
@@ -339,27 +353,38 @@ function renderRun(run) {
     ? `${downloaded} downloaded ${downloaded === 1 ? "video" : "videos"}`
     : "read-only evidence";
 
-  elements.cards.replaceChildren();
   if (items.length) {
-    selectSummaryCards(items, 4).forEach((item, index) => {
-      const card = renderCard(item, index);
-      if (card) {
-        card.classList.add("card-enter");
-        elements.cards.append(card);
-      }
-    });
+    if (hadLiveEvidence) {
+      renderLiveCards(selectSummaryCards(items, 4));
+    } else {
+      elements.cards.replaceChildren();
+      selectSummaryCards(items, 4).forEach((item, index) => {
+        const card = renderCard(item, index);
+        if (card) {
+          card.dataset.evidenceKey = evidenceKey(item, index);
+          card.dataset.fingerprint = JSON.stringify(item);
+          card.classList.add("card-enter");
+          elements.cards.append(card);
+        }
+      });
+    }
+  } else {
+    elements.cards.replaceChildren();
   }
   currentRun = run;
   renderTable(items);
   const reportMarkdown = getReportMarkdown(run);
+  const streamedReport = elements.output?.dataset?.markdown || "";
   if (elements.output) elements.output.dataset.markdown = reportMarkdown;
-  const canDownload = isReportDownloadable(reportMarkdown);
+  const canDownload = !reportInProgress && isReportDownloadable(reportMarkdown);
   if (elements.downloadReportBtn) {
     elements.downloadReportBtn.disabled = !canDownload;
     elements.downloadReportBtn.classList.toggle("hidden", !canDownload);
   }
-  renderMarkdown(elements.output, reportMarkdown || "socai completed without a report.");
-  revealReport(elements.output);
+  if (streamedReport !== reportMarkdown) {
+    renderMarkdown(elements.output, reportMarkdown || "socai completed without a report.");
+    revealReport(elements.output);
+  }
   elements.result.classList.remove("hidden");
 }
 
@@ -382,6 +407,7 @@ function resetLiveWorkspace() {
   $("#result-summary").textContent = "Waiting for the first post";
   $("#media-summary").textContent = "live evidence stream";
   elements.output.replaceChildren();
+  delete elements.output.dataset.markdown;
 }
 
 function showLiveEvidence(items) {
@@ -400,6 +426,32 @@ function showLiveEvidence(items) {
   renderLiveCards(selectSummaryCards(visible, 4));
   $("#result-summary").textContent = `${visible.length} captured so far`;
   $("#media-summary").textContent = "live evidence stream";
+}
+
+function showLiveReport(event) {
+  const previous = elements.output?.dataset?.markdown || "";
+  const report = mergeReportEvent(previous, event);
+  if (!report || report === previous) return;
+  const previousBlockCount = elements.output.children.length;
+  elements.output.dataset.markdown = report;
+  elements.result.classList.remove("hidden");
+  elements.reportSection.classList.remove("hidden");
+  renderMarkdown(elements.output, report);
+  revealReport(elements.output, { fromIndex: previousBlockCount });
+
+  const canDownload = isFinalReportEvent(event) && isReportDownloadable(report);
+  if (elements.downloadReportBtn) {
+    elements.downloadReportBtn.disabled = !canDownload;
+    elements.downloadReportBtn.classList.toggle("hidden", !canDownload);
+  }
+  const progress = Number.isInteger(event.index) && Number.isInteger(event.total)
+    ? `Writing section ${event.index} of ${event.total}.`
+    : "Writing the evidence-grounded report.";
+  showActivity("socai is researching the captured evidence", progress);
+}
+
+function runNeedsPolling(run) {
+  return run?.status === "running" || ["pending", "generating", "streaming"].includes(run?.reportStatus);
 }
 
 function renderLiveCards(items) {
@@ -520,12 +572,17 @@ function posterSources(item) {
   return mediaPreviewCandidates(item).filter((candidate) => candidate.kind === "image").map((candidate) => candidate.src);
 }
 
-function revealReport(container) {
+function revealReport(container, { fromIndex = 0 } = {}) {
   const blocks = [...container.children];
-  blocks.forEach((block) => block.classList.add("report-reveal"));
+  blocks.forEach((block, index) => {
+    block.classList.add("report-reveal");
+    if (index < fromIndex) block.classList.add("is-visible");
+  });
   requestAnimationFrame(() => {
     blocks.forEach((block, index) => {
-      setTimeout(() => block.classList.add("is-visible"), Math.min(index * 42, 840));
+      if (index >= fromIndex) {
+        setTimeout(() => block.classList.add("is-visible"), Math.min((index - fromIndex) * 36, 420));
+      }
     });
   });
   if (!blocks.length) {

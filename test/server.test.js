@@ -22,6 +22,11 @@ test("local APIs require exact same-origin JSON and typed onboarding fields", as
     assert.match(statusModule.headers.get("content-type"), /^text\/javascript/);
     assert.match(await statusModule.text(), /deriveStatusView/);
 
+    const reportStreamModule = await fetch(`${url}/report-stream.js`);
+    assert.equal(reportStreamModule.status, 200);
+    assert.match(reportStreamModule.headers.get("content-type"), /^text\/javascript/);
+    assert.match(await reportStreamModule.text(), /mergeReportEvent/);
+
     const wrongOrigin = await fetch(`${url}/api/onboard`, {
       method: "POST",
       headers: {
@@ -67,6 +72,8 @@ test("saved socai media is exposed through an opaque range-capable local URL", a
     assert.equal(runResponse.status, 200);
     const run = await runResponse.json();
     assert.match(run.result.items[0].video.browser_url, /^\/media\/[A-Za-z0-9_-]+$/);
+    assert.equal(run.result.items[0].video.local_path, undefined);
+    assert.doesNotMatch(JSON.stringify(run), new RegExp(mediaPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
     const mediaResponse = await fetch(`${url}${run.result.items[0].video.browser_url}`, {
       headers: { Range: "bytes=2-5" },

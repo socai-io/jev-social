@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { getHomeDir } from "./config.js";
+import { buildGroundedResearchReport } from "./report.js";
 
 const writeQueues = new Map();
 
@@ -85,9 +86,17 @@ export async function markInterruptedRuns(env = process.env) {
     } catch {
       continue;
     }
-    if (run.status !== "running") continue;
+    const reportInProgress = ["pending", "generating", "streaming"].includes(run.reportStatus);
+    if (run.status !== "running" && !reportInProgress) continue;
     const stopReason = "The local process stopped before this run completed.";
-    const report = String(run.report || "").replace("Research is still in progress.", stopReason);
+    const report = buildGroundedResearchReport({
+      request: run.request || run.query,
+      platform: run.platform,
+      items: run.result?.items,
+      actions: run.actions,
+      status: "interrupted",
+      stopReason,
+    });
     await saveRun({
       ...run,
       updatedAt: new Date().toISOString(),
@@ -96,6 +105,8 @@ export async function markInterruptedRuns(env = process.env) {
       result: { ...(run.result || {}), ok: false },
       report,
       finalSocaiOutput: report,
+      reportKind: "fallback",
+      reportStatus: "interrupted",
     }, env);
     changed += 1;
   }

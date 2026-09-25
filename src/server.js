@@ -6,8 +6,9 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { runSearch } from "./app.js";
+import { getPrivateRunMedia, runSearch } from "./app.js";
 import { getConfigPath, readConfig, resolveApiKey } from "./config.js";
+import { publicEvidence } from "./evidence.js";
 import { errorPayload } from "./errors.js";
 import { loadLocalEnv } from "./env.js";
 import { saveOnboarding } from "./onboard.js";
@@ -23,6 +24,7 @@ const STATIC_FILES = {
   "/run-route.js": ["run-route.js", "text/javascript; charset=utf-8"],
   "/prompts.js": ["prompts.js", "text/javascript; charset=utf-8"],
   "/status.js": ["status.js", "text/javascript; charset=utf-8"],
+  "/report-stream.js": ["report-stream.js", "text/javascript; charset=utf-8"],
   "/styles.css": ["styles.css", "text/css; charset=utf-8"],
   "/report-download.js": ["report-download.js", "text/javascript; charset=utf-8"],
   "/platforms/instagram.png": ["platforms/instagram.png", "image/png"],
@@ -132,7 +134,7 @@ async function handleRequest(request, response, env, mediaRegistry) {
         { env },
       );
       await registerRunMedia(run, mediaRegistry, env);
-      return sendJson(response, 200, run);
+      return sendJson(response, 200, publicEvidence(run));
     }
     if (request.method === "POST" && url.pathname === "/api/search-stream") {
       assertSameOrigin(request);
@@ -148,7 +150,7 @@ async function handleRequest(request, response, env, mediaRegistry) {
       const run = await readRun(runMatch[1], env);
       if (run) await registerRunMedia(run, mediaRegistry, env);
       return run
-        ? sendJson(response, 200, run)
+        ? sendJson(response, 200, publicEvidence(run))
         : sendJson(response, 404, { error: { code: "RUN_NOT_FOUND", message: "Run not found." } });
     }
     return sendJson(response, 404, { error: { code: "NOT_FOUND", message: "Not found." } });
@@ -167,7 +169,17 @@ async function streamSearch(request, response, body, env, mediaRegistry) {
     "X-Accel-Buffering": "no",
   });
   const write = (value) => {
-    if (!response.destroyed && !response.writableEnded) response.write(`${JSON.stringify(value)}\n`);
+    if (response.destroyed || response.writableEnded) return Promise.resolve(false);
+    if (response.write(`${JSON.stringify(value)}\n`)) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const finish = () => {
+        response.removeListener("drain", finish);
+        response.removeListener("close", finish);
+        resolve(!response.destroyed && !response.writableEnded);
+      };
+      response.once("drain", finish);
+      response.once("close", finish);
+    });
   };
   const controller = new AbortController();
   const abort = () => controller.abort();
@@ -182,9 +194,9 @@ async function streamSearch(request, response, body, env, mediaRegistry) {
       { env, onEvent: write, signal: controller.signal },
     );
     await registerRunMedia(run, mediaRegistry, env);
-    write({ stage: "result", run });
+    await write({ stage: "result", run: publicEvidence(run) });
   } catch (error) {
-    write({ stage: "error", ...errorPayload(error) });
+    await write({ stage: "error", ...errorPayload(error) });
   } finally {
     request.removeListener("aborted", abort);
     response.removeListener("close", abortIfOpen);
@@ -195,9 +207,9 @@ async function streamSearch(request, response, body, env, mediaRegistry) {
 async function registerRunMedia(run, registry, env) {
   pruneMediaRegistry(registry);
   const roots = await allowedMediaRoots(env);
-  const visit = async (value) => {
+  const visit = async (value, publicValue) => {
     if (Array.isArray(value)) {
-      await Promise.all(value.map(visit));
+      await Promise.all(value.map((child, index) => visit(child, publicValue?.[index])));
       return;
     }
     if (!value || typeof value !== "object") return;
@@ -216,14 +228,16 @@ async function registerRunMedia(run, registry, env) {
             entry[1].expiresAt = Date.now() + MEDIA_TTL_MS;
           }
           const browserKey = key === "local_path" ? "browser_url" : key.replace(/_local_path$/, "_browser_url");
-          value[browserKey] = `/media/${entry[0]}`;
+          if (publicValue && typeof publicValue === "object") publicValue[browserKey] = `/media/${entry[0]}`;
         }
       } else {
-        await visit(child);
+        await visit(child, publicValue?.[key]);
       }
     }
   };
-  await visit(run?.result);
+  const privateItems = getPrivateRunMedia(run)?.items;
+  if (privateItems) await visit(privateItems, run?.result?.items);
+  else await visit(run?.result, run?.result);
 }
 
 async function allowedMediaRoots(env) {

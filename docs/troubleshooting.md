@@ -251,7 +251,7 @@ When a run naturally halts at a barrier—such as a login or challenge wall (`st
 
 When a run is manually cancelled (e.g. by navigating back to search, clicking back, or closing the stream connection):
 - **Shutdown Behavior**:
-  - During the model request phase (classification or action choice via OpenRouter), the in-flight HTTP request is cancelled via `AbortSignal` with no child process signals involved.
+  - During a model request phase (classification, action choice, or optional report synthesis via OpenRouter), the in-flight HTTP request is cancelled via `AbortSignal` with no child process signals involved.
   - During a running `socai` child operation, process tree termination is requested immediately: on Unix (macOS / Linux), `SIGTERM` is sent to the process group followed by `SIGKILL` after a one-second grace period; on Windows, `child.kill("SIGTERM")` is sent followed by `taskkill.exe /pid <pid> /t /f` after the one-second grace period.
   - Detached background browser sessions or the standalone `socai` daemon may remain running.
-- **Observable Guarantee**: Cancellation stops active work and may end without a newly rendered run view or downloadable report in the UI. While an abort during the decision loop bypasses report compilation and run persistence, a disconnect during or after persistence can leave a saved run on disk while suppressing the final UI event.
+- **Observable Guarantee**: Cancellation stops active work and may end without a newly rendered run view or downloadable report in the UI. Completed evidence and action checkpoints remain on disk. If delivery stops during report synthesis or streaming, the checkpoint is marked interrupted and rebuilt as an honest deterministic partial report; no incomplete streamed prefix is enabled for download.
