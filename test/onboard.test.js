@@ -23,6 +23,28 @@ test("environment-only OpenRouter keys are not persisted during onboarding", asy
   }
 });
 
+test("a loopback System One provider can onboard without an OpenRouter key", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-onboard-local-"));
+  const env = {
+    ...process.env,
+    JEV_SOCIAL_HOME: directory,
+    JEV_SOCIAL_SYSTEM_ONE_URL: "http://127.0.0.1:8009/v1/systemone",
+    JEV_SOCIAL_SYSTEM_ONE_MODEL: "kev-latest",
+    SOCAI_BIN: path.join(directory, "missing-socai"),
+  };
+  delete env.OPENROUTER_API_KEY;
+  delete env.openrouter;
+  try {
+    const result = await saveOnboarding({ verify: true, persistApiKey: false, env });
+    const config = await readConfig(env);
+    assert.equal(config.openrouterApiKey, undefined);
+    assert.deepEqual(result.decisionProvider, { kind: "local", model: "kev-latest" });
+    assert.deepEqual(result.keyInfo, {});
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("saveOnboarding reports the resolved socai bin path for CLI output", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-onboard-bin-"));
   const mockBin = path.join(directory, "mock-socai.mjs");

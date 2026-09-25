@@ -46,7 +46,7 @@ By default (using `existing` or `managed` Chrome modes without external endpoint
 
 | State | What Happened | What You See | How to Resolve |
 | --- | --- | --- | --- |
-| **Missing `socai` executable** | The `socai` CLI is not installed or not discoverable at the resolved binary path. | Status indicator displays `socai unavailable`, or terminal reports `spawn ENOENT` / command not found. | On macOS and Windows, run `npx --yes github:socai-io/jev-social onboard` (or `npm start -- onboard`). On Linux, install the CLI package from source via Cargo (`cargo install --git https://github.com/socai-io/socai.git socai-cli`) and set `SOCAI_BIN`. |
+| **Missing `socai` executable** | The `socai` CLI is not installed or not discoverable at the resolved binary path. | Status indicator displays `socai unavailable`, or terminal reports `spawn ENOENT` / command not found. | On macOS and Windows, run `npx github:socai-io/jev-social#v0.1.7 onboard` (or `npm start -- onboard`). On Linux, install the CLI package from source via Cargo (`cargo install --git https://github.com/socai-io/socai.git socai-cli`) and set `SOCAI_BIN`. |
 | **Browser connection failure** | `socai` cannot connect to Chrome or its DevTools protocol (CDP) endpoint. | The readiness strip shows `Chrome unavailable`, `Chrome permission needed`, `Chrome disconnected`, or `Remote browser unavailable` with a short local action. | Follow your active connection mode below. Ensure the target Chrome instance is running with remote debugging enabled and accept any remote-debugging permission prompts. Avoid blanket process-killing commands. |
 | **Login-required / challenge gate** | The platform blocked unauthenticated access with a login modal, redirect (e.g. `authwall`), or CAPTCHA. | Status displays a partial result notice with the specific gate reason (for example, `Partial results · The platform requires attention: login_required`). | Open the platform in the specific user-accessible Chrome session or profile selected by `socai` (`existing` or `managed` mode), complete authentication or challenges, and verify browsing before re-running. (If using hosted `remote` mode, switch to `existing` or `managed` mode to authenticate interactively.) |
 | **Valid empty result** | The platform loaded successfully and the search executed cleanly, but returned 0 matching records. | Evidence cards, table, and heading remain hidden. Depending on subsequent decisions, the run can finalize as `partial` (`Partial results · Jev stopped without usable evidence.`), `step_limit` (if max steps are reached), or `decision_failed` (if a subsequent model decision call fails). | The initial search executed cleanly without matching records on the platform. Broaden or rephrase your search query. (If a subsequent decision failed, verify model API connectivity). |
@@ -189,7 +189,7 @@ Because resolution is not pinned to a single binary and may differ from what is 
 
 - **macOS & Windows**: Run automated onboarding to download and install the official release:
   ```bash
-  npx --yes github:socai-io/jev-social onboard
+  npx github:socai-io/jev-social#v0.1.7 onboard
   # or from a repository checkout:
   npm start -- onboard
   ```

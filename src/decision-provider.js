@@ -71,12 +71,7 @@ export async function requestDecision({
     throw new Error(`${local ? "Local System One" : "OpenRouter"} returned invalid JSON`);
   }
   if (!response.ok) {
-    const message = payload?.error?.message;
-    throw new Error(
-      typeof message === "string" && message.trim()
-        ? message.trim()
-        : `${local ? "Local System One" : "OpenRouter"} returned HTTP ${response.status}`,
-    );
+    throw new Error(`${local ? "Local System One" : "OpenRouter"} returned HTTP ${response.status}`);
   }
   return payload;
 }

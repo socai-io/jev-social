@@ -86,6 +86,7 @@ try {
 
 async function onboard(flags) {
   const current = await readConfig();
+  const provider = resolveDecisionProvider();
   let apiKey;
   let persistApiKey = false;
   if (flags.apiKey) {
@@ -94,7 +95,7 @@ async function onboard(flags) {
   } else if (resolveApiKey(current)) {
     apiKey = resolveApiKey(current);
   }
-  if (!apiKey) {
+  if (!apiKey && provider.kind === "openrouter") {
     apiKey = await promptSecret("OpenRouter API key: ");
     persistApiKey = true;
   }
@@ -116,7 +117,11 @@ async function onboard(flags) {
     onMessage: (message) => console.log(message),
   });
   console.log(`Saved ${result.configPath}`);
-  console.log(`Jev API: ${flags.noVerify ? "saved (not verified)" : "verified"}`);
+  console.log(
+    result.decisionProvider.kind === "local"
+      ? `Decision provider: local (${result.decisionProvider.model})`
+      : `Jev API: ${flags.noVerify ? "saved (not verified)" : "verified"}`,
+  );
   console.log(`socai CLI: ${result.socai.installed ? result.socai.bin : "not ready"}`);
   if (result.socai.capabilities) {
     console.log(`Capabilities: ${JSON.stringify(result.socai.capabilities)}`);
