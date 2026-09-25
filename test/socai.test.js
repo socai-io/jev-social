@@ -9,6 +9,7 @@ import {
   buildTikTokVideoArgs,
   parseJsonOutput,
   probeSocai,
+  readSocaiReadiness,
   runSocaiResearch,
   runSocaiSearch,
 } from "../src/socai.js";
@@ -208,7 +209,7 @@ if (args[0] === "--version") {
 
   try {
     const env = { ...process.env, SOCAI_BIN: mock };
-    const status = await probeSocai({}, env);
+    const status = await probeSocai({}, env, undefined, { includeReadiness: true });
     assert.equal(status.installed, true);
     assert.equal(status.version, "0.5.6-beta.1");
     assert.deepEqual(status.capabilities, {
@@ -216,8 +217,187 @@ if (args[0] === "--version") {
       tiktok: true,
       linkedin: false,
     });
+    assert.deepEqual(status.readiness, {
+      schemaVersion: null,
+      cliAvailable: true,
+      daemonRunning: null,
+      daemonCompatible: null,
+      browserConnected: null,
+      browserState: "unknown",
+      profileMode: "unknown",
+      activeProfileMode: null,
+      errorCode: null,
+      platforms: {
+        instagram: { available: true, loginState: "unknown", operations: [] },
+        tiktok: { available: true, loginState: "unknown", operations: [] },
+        linkedin: { available: false, loginState: "unknown", operations: [] },
+      },
+    });
     assert.equal(status.bin, mock, "probeSocai must retain bin internally for CLI callers");
     assert.equal(status.configPath, undefined);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("probeSocai normalizes the observational browser status contract", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-readiness-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  const statusPayload = {
+    schema_version: 1,
+    cli_available: true,
+    cli_version: "2",
+    daemon_running: true,
+    daemon_compatible: true,
+    browser_connected: true,
+    browser_state: "connected",
+    profile_mode: "auto",
+    active_profile_mode: "existing",
+    error_code: null,
+    next_step: "open ws://127.0.0.1:9222/devtools/browser/private",
+    private_profile_path: "/Users/private/Chrome/Profile 1",
+    platforms: [
+      { id: "instagram", available: true, login_state: "authenticated", operations: ["search", "get-posts", "/Users/private/leak"] },
+      { id: "tiktok", available: true, login_state: "unknown", operations: ["search", "get-videos"] },
+      { id: "unknown-site", available: true, login_state: "authenticated", operations: ["search"] },
+    ],
+  };
+  await writeFile(
+    mock,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "--version") console.log("socai 0.7.0");
+else if (args[0] === "--help") console.log("socai root");
+else if (args[0] === "status" && args[1] === "--json") console.log(${JSON.stringify(JSON.stringify(statusPayload))});
+else if (["instagram", "tiktok"].includes(args[0]) && args.at(-1) === "--help") console.log("Commands: search");
+else process.exitCode = 1;
+`,
+    { mode: 0o755 },
+  );
+
+  try {
+    const status = await probeSocai({}, { ...process.env, SOCAI_BIN: mock }, undefined, { includeReadiness: true });
+    assert.deepEqual(status.readiness, {
+      schemaVersion: 1,
+      cliAvailable: true,
+      daemonRunning: true,
+      daemonCompatible: true,
+      browserConnected: true,
+      browserState: "connected",
+      profileMode: "auto",
+      activeProfileMode: "existing",
+      errorCode: null,
+      platforms: {
+        instagram: { available: true, loginState: "authenticated", operations: ["search", "get-posts"] },
+        tiktok: { available: true, loginState: "unknown", operations: ["search", "get-videos"] },
+        linkedin: { available: false, loginState: "unknown", operations: [] },
+      },
+    });
+    const serialized = JSON.stringify(status.readiness);
+    assert.doesNotMatch(serialized, /9222|websocket|private|Profile 1|unknown-site/i);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("probeSocai treats malformed status output as unknown without making an installed CLI unavailable", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-readiness-invalid-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  await writeFile(
+    mock,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "--version") console.log("socai 0.7.0");
+else if (args[0] === "--help") console.log("socai root");
+else if (args[0] === "status") console.log('{"schema_version":1,"browser_connected":"yes","profile_mode":"/Users/private"}');
+else process.exitCode = 1;
+`,
+    { mode: 0o755 },
+  );
+
+  try {
+    const status = await probeSocai({}, { ...process.env, SOCAI_BIN: mock }, undefined, { includeReadiness: true });
+    assert.equal(status.installed, true);
+    assert.equal(status.readiness.browserState, "unknown");
+    assert.equal(status.readiness.browserConnected, null);
+    assert.doesNotMatch(JSON.stringify(status.readiness), /Users|private/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("readSocaiReadiness accepts a valid v1 payload even when the CLI exits nonzero", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-readiness-nonzero-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  await writeFile(
+    mock,
+    `#!/usr/bin/env node
+console.log(JSON.stringify({
+  schema_version: 1, cli_available: true, daemon_running: true, daemon_compatible: true,
+  browser_connected: false, browser_state: "disconnected", profile_mode: "remote",
+  active_profile_mode: null, error_code: "REMOTE_SESSION_UNAVAILABLE", platforms: []
+}));
+process.exitCode = 7;
+`,
+    { mode: 0o755 },
+  );
+  try {
+    const readiness = await readSocaiReadiness(mock);
+    assert.equal(readiness.errorCode, "REMOTE_SESSION_UNAVAILABLE");
+    assert.equal(readiness.profileMode, "remote");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("readSocaiReadiness times out to unknown without failing CLI availability", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-readiness-timeout-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  await writeFile(mock, "#!/usr/bin/env node\nsetTimeout(() => {}, 30_000);\n", { mode: 0o755 });
+  try {
+    const readiness = await readSocaiReadiness(mock, process.env, undefined, { timeoutMs: 40 });
+    assert.equal(readiness.cliAvailable, true);
+    assert.equal(readiness.browserConnected, null);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("ordinary capability probes do not invoke the optional browser readiness command", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-readiness-optional-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  await writeFile(
+    mock,
+    `#!/usr/bin/env node
+const args = process.argv.slice(2);
+if (args[0] === "status") setTimeout(() => {}, 30_000);
+else if (args[0] === "--version") console.log("socai 0.6.0");
+else if (args[0] === "--help") console.log("socai root");
+else if (args.at(-1) === "--help") console.log("Commands: search");
+else process.exitCode = 1;
+`,
+    { mode: 0o755 },
+  );
+  try {
+    const started = Date.now();
+    const status = await probeSocai({}, { ...process.env, SOCAI_BIN: mock });
+    assert.equal(status.installed, true);
+    assert.ok(Date.now() - started < 2_000, "non-status callers must not wait for browser diagnostics");
+    assert.equal(status.readiness.browserConnected, null);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("readSocaiReadiness aborts a running status probe promptly", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "jev-social-readiness-abort-"));
+  const mock = path.join(directory, "socai-mock.mjs");
+  await writeFile(mock, "#!/usr/bin/env node\nsetTimeout(() => {}, 30_000);\n", { mode: 0o755 });
+  try {
+    const controller = new AbortController();
+    const pending = readSocaiReadiness(mock, process.env, controller.signal);
+    setTimeout(() => controller.abort(), 40);
+    await assert.rejects(pending, (error) => error.code === "SOCAI_ABORTED");
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

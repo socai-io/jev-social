@@ -4,6 +4,33 @@ import { formatCommand, runProcess } from "./process.js";
 import { buildActionArgs } from "./actions.js";
 
 const PLATFORMS = ["instagram", "tiktok", "linkedin"];
+const BROWSER_STATES = new Set(["connected", "connecting", "disconnected", "unknown"]);
+const PROFILE_MODES = new Set(["existing", "managed", "auto", "remote", "unknown"]);
+const LOGIN_STATES = new Set(["authenticated", "unauthenticated", "unknown"]);
+const BROWSER_ERROR_CODES = new Set([
+  "BROWSER_NOT_CONNECTED",
+  "BROWSER_DISCONNECTED",
+  "BROWSER_PERMISSION_REQUIRED",
+  "REMOTE_SESSION_UNAVAILABLE",
+  "BROWSER_ENDPOINT_UNREACHABLE",
+  "BROWSER_CONNECTION_FAILED",
+  "DAEMON_STATUS_UNAVAILABLE",
+  "DAEMON_UNAVAILABLE",
+]);
+const STATUS_OPERATIONS = new Set([
+  "search",
+  "get-posts",
+  "get-videos",
+  "get-notes",
+  "profile",
+  "author",
+  "company",
+  "company-people",
+  "related-people",
+  "history",
+  "page_state",
+  "author_scan",
+]);
 
 export async function actionCapabilities({ config = {}, env = process.env, platform, signal, capabilities }) {
   if (!PLATFORMS.includes(platform)) throw new AppError("Unsupported platform.", { code: "INVALID_PLATFORM" });
@@ -43,7 +70,7 @@ export async function resolveSocaiBin(config = {}, env = process.env) {
   return configuredSocaiBin(config, env) || (await defaultInstalledSocaiBin());
 }
 
-export async function probeSocai(config = {}, env = process.env, signal) {
+export async function probeSocai(config = {}, env = process.env, signal, { includeReadiness = false } = {}) {
   const bin = await resolveSocaiBin(config, env);
   try {
     const root = await runProcess(bin, ["--help"], { timeoutMs: 15_000, env, signal });
@@ -54,17 +81,24 @@ export async function probeSocai(config = {}, env = process.env, signal) {
         bin,
         version: null,
         capabilities: { instagram: false, tiktok: false, linkedin: false },
+        readiness: unknownSocaiReadiness(false),
         error: concise(root.stderr || root.stdout),
       };
     }
-    const version = await getSocaiVersion(bin, env, signal);
     const capabilities = { instagram: false, tiktok: false, linkedin: false };
-    await Promise.all(
-      PLATFORMS.map(async (platform) => {
+    const [version, readiness] = await Promise.all([
+      getSocaiVersion(bin, env, signal),
+      includeReadiness
+        ? readSocaiReadiness(bin, env, signal)
+        : Promise.resolve(unknownSocaiReadiness(true)),
+      ...PLATFORMS.map(async (platform) => {
         capabilities[platform] = await platformSupported(bin, platform, env, signal);
       }),
-    );
-    return { installed: true, bin, version, capabilities };
+    ]);
+    if (readiness.schemaVersion === null) {
+      for (const platform of PLATFORMS) readiness.platforms[platform].available = capabilities[platform];
+    }
+    return { installed: true, bin, version, capabilities, readiness };
   } catch (error) {
     if (error?.code === "SOCAI_ABORTED" || error?.name === "AbortError" || signal?.aborted) {
       throw abortedError();
@@ -74,9 +108,99 @@ export async function probeSocai(config = {}, env = process.env, signal) {
       bin,
       version: null,
       capabilities: { instagram: false, tiktok: false, linkedin: false },
+      readiness: unknownSocaiReadiness(false),
       error: error.code === "ENOENT" ? "socai executable not found" : concise(error.message),
     };
   }
+}
+
+export function unknownSocaiReadiness(cliAvailable = true) {
+  return {
+    schemaVersion: null,
+    cliAvailable: Boolean(cliAvailable),
+    daemonRunning: null,
+    daemonCompatible: null,
+    browserConnected: null,
+    browserState: "unknown",
+    profileMode: "unknown",
+    activeProfileMode: null,
+    errorCode: null,
+    platforms: Object.fromEntries(
+      PLATFORMS.map((platform) => [platform, { available: false, loginState: "unknown", operations: [] }]),
+    ),
+  };
+}
+
+export async function readSocaiReadiness(bin, env = process.env, signal, { timeoutMs = 5_000 } = {}) {
+  try {
+    const result = await runProcess(bin, ["status", "--json"], {
+      timeoutMs,
+      maxOutputBytes: 128 * 1024,
+      env,
+      signal,
+    });
+    if (result.aborted) throw abortedError();
+    if (result.timedOut || result.overflowed) {
+      return unknownSocaiReadiness(true);
+    }
+    const readiness = normalizeSocaiReadiness(JSON.parse(result.stdout.trim()));
+    return readiness.schemaVersion === 1 ? readiness : unknownSocaiReadiness(true);
+  } catch (error) {
+    if (error?.code === "SOCAI_ABORTED" || error?.name === "AbortError" || signal?.aborted) {
+      throw abortedError();
+    }
+    return unknownSocaiReadiness(true);
+  }
+}
+
+export function normalizeSocaiReadiness(value) {
+  const valid = value
+    && typeof value === "object"
+    && !Array.isArray(value)
+    && value.schema_version === 1
+    && typeof value.cli_available === "boolean"
+    && typeof value.daemon_running === "boolean"
+    && typeof value.daemon_compatible === "boolean"
+    && typeof value.browser_connected === "boolean"
+    && BROWSER_STATES.has(value.browser_state)
+    && PROFILE_MODES.has(value.profile_mode)
+    && (value.active_profile_mode === null || PROFILE_MODES.has(value.active_profile_mode))
+    && Array.isArray(value.platforms);
+  if (!valid) return unknownSocaiReadiness(true);
+
+  const platforms = unknownSocaiReadiness(value.cli_available).platforms;
+  for (const candidate of value.platforms) {
+    if (!candidate || typeof candidate !== "object" || !PLATFORMS.includes(candidate.id)) continue;
+    const loginState = LOGIN_STATES.has(candidate.login_state) ? candidate.login_state : "unknown";
+    const operations = Array.isArray(candidate.operations)
+      ? [...new Set(candidate.operations.filter((operation) => STATUS_OPERATIONS.has(operation)))]
+      : [];
+    platforms[candidate.id] = {
+      available: candidate.available === true,
+      loginState,
+      operations,
+    };
+  }
+
+  let errorCode = null;
+  if (typeof value.error_code === "string" && BROWSER_ERROR_CODES.has(value.error_code)) {
+    errorCode = value.error_code;
+  } else if (value.browser_state === "disconnected" && value.error_code !== null) {
+    errorCode = "BROWSER_CONNECTION_FAILED";
+  }
+
+  return {
+    schemaVersion: 1,
+    cliAvailable: value.cli_available,
+    daemonRunning: value.daemon_running,
+    daemonCompatible: value.daemon_compatible,
+    browserConnected: value.browser_connected,
+    browserState: value.browser_state,
+    profileMode: value.profile_mode,
+    activeProfileMode: value.active_profile_mode,
+    errorCode,
+    platforms,
+  };
 }
 
 /**
