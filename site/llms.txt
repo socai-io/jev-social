@@ -5,6 +5,7 @@
 Canonical site: https://socai-io.github.io/jev-social/
 Source: https://github.com/socai-io/jev-social
 License: MIT
+Local System One guide: https://socai-io.github.io/jev-social/local-system-one/
 
 ## What it does
 
@@ -52,6 +53,8 @@ npx github:socai-io/jev-social#v0.1.8 search "find emerging design creators on I
 ```
 
 The tagged v0.1.8 release uses OpenRouter by default. Set `JEV_SOCIAL_SYSTEM_ONE_URL=http://127.0.0.1:8009/v1/systemone` and `JEV_SOCIAL_SYSTEM_ONE_MODEL=kev-latest` to switch decisions to local Kev without an OpenRouter key. Only an exact loopback endpoint is accepted; OpenRouter credentials are not forwarded. Set `OPENROUTER_REPORT_MODEL=off` to keep report generation on the deterministic evidence path.
+
+Step-by-step local Kev guide: https://socai-io.github.io/jev-social/local-system-one/
 
 ## Install as an Agent Skill
 
