@@ -63,7 +63,9 @@ This video also predates the per-operation Jev loop.
 
 Only commands exposed by the installed socai CLI are offered. Targets come from captured results or explicit URLs in the user's request. Unsupported, malformed, and low-confidence decisions do not execute. Previously attempted operations are removed from the next choice set.
 
-The run stores each choice, confidence, command, observed result summary, and elapsed time. Login/access gates, decision failures, and step limits produce partial results rather than a success claim. Reports are compiled from captured text, comments, and source links; they do not hand browsing off to another agent or depend on `socai research`. Speed varies with the number of chosen operations and the live site.
+The run stores each choice, confidence, command, observed result summary, and elapsed time. Login/access gates, decision failures, and step limits produce partial results rather than a success claim. After collection, Jev Social can use the existing OpenRouter key to synthesize a concise report from a bounded, sanitized evidence payload. Every accepted finding must cite a captured source; foreign URLs, missing citations, raw JSON, and local paths fail validation and fall back to the deterministic evidence report. Report sections stream into the fixed panel while captured cards stay visible, and the downloaded `report.md` is the same Markdown shown in the browser. The synthesizer has no browser or shell tools and does not depend on `socai research`.
+
+The report model defaults to `openai/gpt-4o-mini` and may incur normal provider usage. Set `OPENROUTER_REPORT_MODEL` to another available model, or set it to `off` to keep report generation fully deterministic. Speed varies with the number of chosen operations, the live site, and the selected report model.
 
 ## Recorded evidence
 

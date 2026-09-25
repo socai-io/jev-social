@@ -20,6 +20,7 @@ Jev Social runs locally, but it is not an offline application.
 
 - Onboarding can send the OpenRouter key to `https://openrouter.ai/api/v1/auth/key` for validation.
 - Jev decisions send the research goal, requested platform, bounded action labels, observed source URLs, previous action summaries, and up to 400 characters of visible title, caption, text, or name for each captured item to OpenRouter's Decisions API. This content may contain public or personal social-media data. The request does not intentionally include raw socai JSON, downloaded media, browser cookies, or local filesystem paths.
+- Evidence-report synthesis is enabled by default and makes a second OpenRouter model call after collection. Its compact, bounded user payload is at most 48,000 characters and contains the research goal, selected platform, run status and stop reason, coverage counts, and at most 40 sanitized records: source URLs, titles, up to 1,000 characters of each author claim, up to five 300-character comment excerpts, observed engagement metadata, and capture depth. Set `OPENROUTER_REPORT_MODEL=off` to keep report generation deterministic and prevent this synthesis call. The synthesizer receives no browser or shell tools.
 - Provider-side storage and retention are governed by OpenRouter and the selected model provider, not this repository.
 - The installed socai CLI and Chrome connect to the selected social platform. Their browser and network behavior is maintained by [socai](https://github.com/socai-io/socai), outside the Jev Social process.
 

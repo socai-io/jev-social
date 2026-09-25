@@ -13,3 +13,10 @@ export {
 export { saveOnboarding, verifyOpenRouterApiKey, verifyTypesafeApiKey } from "./onboard.js";
 export { loadLocalEnv } from "./env.js";
 export { extractSearchQuery } from "./query.js";
+export {
+  buildGroundedResearchReport,
+  requestOpenRouterResearchReport,
+  splitReportChunks,
+  synthesizeResearchReport,
+  validateResearchReport,
+} from "./report.js";

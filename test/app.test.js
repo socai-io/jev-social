@@ -71,20 +71,34 @@ test("runSearch lets Jev choose a specific post, then finish without an autonomo
     return 'finish';
   });
   try {
-    const run = await runSearch({query:'find handmade art on Instagram',limit:2}, {env,client,onEvent:(event)=>events.push(event)});
+    const run = await runSearch(
+      {query:'find handmade art on Instagram',limit:2},
+      {env,client,onEvent:(event)=>events.push(event),reportChunkDelayMs:0},
+    );
     assert.equal(run.query, 'handmade art');
     assert.equal(run.status, 'completed');
     assert.deepEqual(run.actions.map((entry) => entry.action.kind), ['search','read_post','finish']);
-    assert.equal(run.socaiOutputs.length, 2);
-    assert.match(run.command, /get-posts --post https:\/\/www.instagram.com\/p\/second\//);
-    assert.ok(!run.evidenceCommands.some((command) => /research|\/first\//.test(command)));
+    assert.equal(run.socaiOutputs, undefined);
+    assert.equal(run.command, undefined);
+    assert.equal(run.evidenceCommands, undefined);
     assert.match(run.report, /Love the glaze/);
     assert.ok(events.some((event) => event.stage === 'planning'));
+    assert.ok(events.some((event) => event.stage === 'researching'));
+    const reportEvents = events.filter((event) => event.stage === 'report');
+    assert.ok(reportEvents.length >= 5);
+    assert.equal(reportEvents.map((event) => event.chunk).join(''), run.report);
+    assert.ok(reportEvents.every((event) => event.report === undefined));
+    assert.equal(reportEvents.at(-1).index, reportEvents.at(-1).total);
+    assert.ok(events.findIndex((event) => event.stage === 'evidence') < events.findIndex((event) => event.stage === 'report'));
+    assert.match(run.report, /## Executive summary/);
+    assert.match(run.report, /## Findings/);
+    assert.match(run.report, /\[E\d+\]\(https:\/\/www\.instagram\.com\//);
     assert.ok(events.some((event) => event.message === 'cannot open [path]; retrying safely'));
     assert.ok(events.some((event) => event.message === 'artifact_path=[path] but upload failed'));
     assert.ok(!JSON.stringify(events).includes('/tmp/private'));
     assert.ok(!JSON.stringify(events).includes('/opt/company'));
     assert.ok(!run.result.items.some((item) => item.url.includes('evil.example')));
+    assert.doesNotMatch(JSON.stringify(run), /local_path|socaiOutputs|stdout|secret-cookie|private DOM|\/tmp\/private/);
   } finally { await rm(directory,{recursive:true,force:true}); }
 });
 
@@ -108,9 +122,8 @@ test("generic TikTok research reads video details without downloading media", as
   const client = choices('tiktok', (criteria, step) => step === 0 ? matching(criteria,/^Search tiktok/) : step === 1 ? matching(criteria,/Open this post.*\/222/) : 'finish');
   try {
     const run = await runSearch({query:'find handmade art on TikTok'}, {env,client});
-    assert.equal(run.socaiOutputs.length,2);
-    assert.match(run.command,/get-videos --video 'https:\/\/www.tiktok.com\/@demo\/video\/222' --num-comments 8 --pretty/);
-    assert.ok(!run.command.includes('--download-media'));
+    assert.equal(run.socaiOutputs, undefined);
+    assert.equal(run.command, undefined);
     assert.ok(!run.actions[1].action.downloadMedia);
   } finally { await rm(directory,{recursive:true,force:true}); }
 });
@@ -120,11 +133,11 @@ test("runSearch downloads only the TikTok video selected by Jev after an explici
   const client = choices('tiktok', (criteria, step) => step === 0 ? matching(criteria,/^Search tiktok/) : step === 1 ? matching(criteria,/download its media.*\/222/) : 'finish');
   try {
     const run = await runSearch({query:'find and download a handmade art video on TikTok'}, {env,client});
-    assert.equal(run.socaiOutputs.length,2);
-    assert.match(run.command,/get-videos --video 'https:\/\/www.tiktok.com\/@demo\/video\/222' --num-comments 8 --download-media/);
-    assert.ok(!run.command.includes('/111'));
+    assert.equal(run.socaiOutputs, undefined);
+    assert.equal(run.command, undefined);
     assert.equal(run.actions[1].action.downloadMedia,true);
-    assert.equal(run.result.items.find((item)=>item.url.endsWith('/222')).video.local_path,'/tmp/video.mp4');
+    assert.equal(run.result.items.find((item)=>item.url.endsWith('/222')).video.local_path, undefined);
+    assert.doesNotMatch(JSON.stringify(run), /\/tmp\/video\.mp4|local_path|socaiOutputs/);
   } finally { await rm(directory,{recursive:true,force:true}); }
 });
 
@@ -133,8 +146,8 @@ test("Jev chooses LinkedIn search type and a specific history operation", async 
   const client = choices('linkedin',(criteria,step) => step === 0 ? matching(criteria,/^Search linkedin people/) : step === 1 ? matching(criteria,/Read experience/) : 'finish');
   try {
     const run = await runSearch({query:'find makers on LinkedIn'}, {env,client});
-    assert.match(run.evidenceCommand,/--type people/);
-    assert.match(run.command,/linkedin history .*--section experience/);
+    assert.equal(run.evidenceCommand, undefined);
+    assert.equal(run.command, undefined);
     assert.match(run.report,/Artist/);
   } finally { await rm(directory,{recursive:true,force:true}); }
 });
@@ -320,11 +333,86 @@ test("an interrupted run checkpoints completed actions and public evidence", asy
     assert.equal(history[0].status, "interrupted");
     const checkpoint = await readRun(history[0].id, env);
     assert.equal(checkpoint.status, "interrupted");
+    assert.equal(checkpoint.reportStatus, "interrupted");
+    assert.equal(checkpoint.reportKind, "fallback");
     assert.deepEqual(checkpoint.actions.map((entry) => entry.status), ["completed", "completed"]);
     assert.ok(checkpoint.result.items.some((item) => item.detail_read));
     assert.match(checkpoint.report, /handmade bowl/i);
     const serialized = JSON.stringify(checkpoint);
     assert.doesNotMatch(serialized, /\/tmp\/private|local_path|socaiOutputs|stdout|secret-cookie|private DOM/);
     assert.match(serialized, /\[redacted path\]/);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("an interrupted report stream checkpoints a consistent partial fallback", async () => {
+  const { directory, env } = await fixture();
+  const controller = new AbortController();
+  const client = choices("instagram", (criteria, step) => {
+    if (step === 0) return matching(criteria, /^Search instagram/);
+    if (step === 1) return matching(criteria, /Open this post.*\/second\//);
+    return "finish";
+  });
+  try {
+    await assert.rejects(
+      runSearch(
+        { query: "find handmade art on Instagram" },
+        {
+          env,
+          client,
+          signal: controller.signal,
+          reportChunkDelayMs: 10,
+          onEvent: (event) => {
+            if (event.stage === "report") controller.abort();
+          },
+        },
+      ),
+      { name: "AbortError" },
+    );
+    const [summary] = await listRuns(env);
+    const checkpoint = await readRun(summary.id, env);
+    assert.equal(checkpoint.status, "interrupted");
+    assert.equal(checkpoint.reportStatus, "interrupted");
+    assert.equal(checkpoint.reportKind, "fallback");
+    assert.match(checkpoint.stopReason, /report was being delivered/i);
+    assert.match(checkpoint.report, /This is a partial report/i);
+    assert.match(checkpoint.report, /report was being delivered/i);
+    assert.equal(checkpoint.report, checkpoint.finalSocaiOutput);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("event delivery is serialized and a rejected final report delivery stays interrupted", async () => {
+  const { directory, env } = await fixture();
+  const client = choices("instagram", (criteria, step) => {
+    if (step === 0) return matching(criteria, /^Search instagram/);
+    return "finish";
+  });
+  let active = 0;
+  let maxActive = 0;
+  try {
+    await assert.rejects(
+      runSearch(
+        { query: "find handmade art on Instagram" },
+        {
+          env,
+          client,
+          reportChunkDelayMs: 0,
+          onEvent: async (event) => {
+            active += 1;
+            maxActive = Math.max(maxActive, active);
+            await new Promise((resolve) => setTimeout(resolve, 2));
+            active -= 1;
+            if (event.stage === "report" && event.index === event.total) return false;
+            return true;
+          },
+        },
+      ),
+      { name: "AbortError" },
+    );
+    assert.equal(maxActive, 1);
+    const [summary] = await listRuns(env);
+    const checkpoint = await readRun(summary.id, env);
+    assert.equal(checkpoint.status, "interrupted");
+    assert.equal(checkpoint.reportStatus, "interrupted");
+    assert.match(checkpoint.stopReason, /report was being delivered/i);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });

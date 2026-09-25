@@ -15,7 +15,7 @@ Use the released Jev Social CLI as the execution boundary. Jev selects from boun
 ## Requirements and costs
 
 - Node.js 20 or newer.
-- A user-provided OpenRouter API key with access to Jev. Jev decisions call OpenRouter and may incur provider charges.
+- A user-provided OpenRouter API key with access to Jev. Jev decisions call OpenRouter and may incur provider charges. By default, the evidence-report stage makes one additional bounded OpenRouter model call with sanitized post text, comment excerpts, metrics, and source URLs; set `OPENROUTER_REPORT_MODEL=off` to use only the deterministic local report.
 - A locally installed socai CLI with support for the requested platform.
 - A signed-in local browser session when Instagram, TikTok, or LinkedIn requires one.
 

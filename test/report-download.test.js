@@ -109,6 +109,15 @@ test("sanitizeReportMarkdown redacts local filesystem paths and preserves valid 
     "Evidence stored at local_path: /Users/alice/Library/Caches/jev/media.mp4",
     "Windows path: C:\\Users\\Barshan\\AppData\\Local\\Temp\\socai\\run.log",
     "File URI: file:///tmp/scratch/debug.txt",
+    "Home path: ~/private/run.json",
+    "Relative path: ../private/run.json",
+    "Workspace path: /workspace/private/run.json",
+    "Single path: /secret",
+    "Spaced path: /Users/alice/My Project/private.txt",
+    "Bare relative path: private/run.json",
+    "Assigned path: model=/private",
+    "UNC path: \\\\server\\share\\run.json",
+    "Relative assignment: artifact_path=relative.json",
     "",
     "Normal text and https://tiktok.com/@creator/video/123 remain intact.",
   ].join("\n");
@@ -125,6 +134,15 @@ test("sanitizeReportMarkdown redacts local filesystem paths and preserves valid 
   assert.ok(!sanitized.includes("/Users/alice/Library/Caches"));
   assert.ok(!sanitized.includes("C:\\Users\\Barshan"));
   assert.ok(!sanitized.includes("file:///tmp/scratch"));
+  assert.ok(!sanitized.includes("~/private/run.json"));
+  assert.ok(!sanitized.includes("../private/run.json"));
+  assert.ok(!sanitized.includes("/workspace/private/run.json"));
+  assert.ok(!sanitized.includes("/secret"));
+  assert.ok(!sanitized.includes("/Users/alice/My Project/private.txt"));
+  assert.ok(!sanitized.includes("private/run.json"));
+  assert.ok(!sanitized.includes("model=/private"));
+  assert.ok(!sanitized.includes("\\\\server\\share\\run.json"));
+  assert.ok(!sanitized.includes("artifact_path=relative.json"));
   assert.match(sanitized, /run_dir:\s*\[redacted path\]/);
   assert.match(sanitized, /local_path:\s*\[redacted path\]/);
   assert.match(sanitized, /\[redacted path\]/);

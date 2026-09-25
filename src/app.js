@@ -1,21 +1,77 @@
 import crypto from "node:crypto";
+import { setTimeout as delay } from "node:timers/promises";
 import { classifySearch } from "./classifier.js";
-import { availableActions, buildActionArgs, chooseAction } from "./actions.js";
+import { availableActions, chooseAction } from "./actions.js";
 import { evidenceReport, extractEvidence, mergeEvidence, publicEvidence, resultObservation } from "./evidence.js";
 import { AppError } from "./errors.js";
 import { readConfig, resolveApiKey } from "./config.js";
 import { extractSearchQuery } from "./query.js";
+import {
+  buildGroundedResearchReport,
+  requestOpenRouterResearchReport,
+  splitReportChunks,
+  synthesizeResearchReport,
+} from "./report.js";
 import { saveRun } from "./runs.js";
 import { actionCapabilities, probeSocai, runSocaiAction, sanitizeCliErrorText } from "./socai.js";
 
+const privateRunMedia = new WeakMap();
+
+export function getPrivateRunMedia(run) {
+  return privateRunMedia.get(run);
+}
+
 export async function runSearch(
   { query, platform = "auto", limit = 4, maxSteps = 12 },
-  { env = process.env, client, onEvent, signal } = {},
+  {
+    env = process.env,
+    client,
+    onEvent,
+    signal,
+    synthesizer,
+    reportChunkDelayMs = 18,
+    reportFetchImpl = fetch,
+  } = {},
 ) {
   const request = query?.trim();
   if (!request) throw new AppError("Search query cannot be empty.", { code: "EMPTY_QUERY" });
   if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new AppError("limit must be between 1 and 100.", { code: "INVALID_LIMIT" });
   if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > 30) throw new AppError("maxSteps must be between 1 and 30.", { code: "INVALID_STEP_LIMIT" });
+
+  const deliveryAborted = () => {
+    const error = new Error("The client disconnected while results were being delivered.");
+    error.name = "AbortError";
+    return error;
+  };
+  const emit = async (event) => {
+    if (!onEvent) return true;
+    const delivered = await onEvent(event);
+    if (delivered === false) throw deliveryAborted();
+    return true;
+  };
+  let pendingProgress;
+  let progressTask;
+  let progressFailure;
+  const queueProgress = (event) => {
+    pendingProgress = event;
+    if (progressTask || progressFailure) return;
+    progressTask = (async () => {
+      while (pendingProgress) {
+        const next = pendingProgress;
+        pendingProgress = undefined;
+        await emit(next);
+      }
+    })().catch((error) => {
+      progressFailure ||= error;
+    }).finally(() => {
+      progressTask = undefined;
+      if (pendingProgress && !progressFailure) queueProgress(pendingProgress);
+    });
+  };
+  const flushProgress = async () => {
+    while (progressTask) await progressTask;
+    if (progressFailure) throw progressFailure;
+  };
 
   const normalizedPlatform = (platform || "auto").toLowerCase();
   if (normalizedPlatform !== "auto" && !["instagram", "tiktok", "linkedin"].includes(normalizedPlatform)) {
@@ -52,7 +108,7 @@ export async function runSearch(
   const startedAt = Date.now();
   const model = env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest";
   const decisionOptions = { apiKey, model, client, signal };
-  onEvent?.({ stage: "classifying", message: "Jev is choosing the social platform…" });
+  await emit({ stage: "classifying", message: "Jev is choosing the social platform…" });
   const classification = await classifySearch({
     goal: request,
     requestedPlatform: normalizedPlatform,
@@ -72,13 +128,25 @@ export async function runSearch(
   let status = "running";
   let stopReason = "Research is still in progress.";
   let activeEntry;
+  let finalReport = "";
+  let reportKind = "evidence";
+  let reportModel;
+  let reportStatus = "pending";
+  const reportInput = () => ({
+    request,
+    platform: selectedPlatform,
+    items,
+    actions,
+    status,
+    stopReason,
+  });
 
   const checkpoint = async () => {
     const publicRequest = publicEvidence(request);
     const publicQuery = publicEvidence(searchQuery);
     const publicItems = publicEvidence(items);
     const publicStopReason = publicEvidence(stopReason);
-    const report = evidenceReport({ request: publicRequest, platform: selectedPlatform, items: publicItems, actions, status, stopReason: publicStopReason });
+    const report = finalReport || evidenceReport({ request: publicRequest, platform: selectedPlatform, items: publicItems, actions, status, stopReason: publicStopReason });
     const run = {
       id, createdAt, updatedAt: new Date().toISOString(), request: publicRequest, query: publicQuery,
       requestedPlatform: platform, platform: selectedPlatform,
@@ -92,13 +160,16 @@ export async function runSearch(
       result: { ok: status === "completed", query: publicQuery, items: publicItems },
       report,
       finalSocaiOutput: report,
+      reportKind,
+      reportStatus,
+      ...(reportModel ? { reportModel } : {}),
     };
     await saveRun(run, env);
     return run;
   };
 
   await checkpoint();
-  onEvent?.({ stage: "started", run: { id, createdAt, query: searchQuery, platform: selectedPlatform, status } });
+  await emit({ stage: "started", run: { id, createdAt, query: searchQuery, platform: selectedPlatform, status } });
 
   // Every operation, including which exact result to open, is chosen from the
   // current observation. The model never supplies executable shell or JS.
@@ -106,7 +177,7 @@ export async function runSearch(
     for (let step = 0; step < maxSteps; step += 1) {
       signal?.throwIfAborted();
       const candidates = availableActions({ platform: selectedPlatform, query: searchQuery, goal: request, items, history: actions, commands, limit });
-      onEvent?.({ stage: "planning", message: "Jev is choosing the next operation…", step: step + 1 });
+      await emit({ stage: "planning", message: "Jev is choosing the next operation…", step: step + 1 });
       let decision;
       try {
         decision = await chooseAction({ goal: request, platform: selectedPlatform, actions: candidates, history: actions, items, limit, remainingSteps: maxSteps - step, ...decisionOptions });
@@ -134,15 +205,16 @@ export async function runSearch(
       }
       await checkpoint();
       const stage = action.downloadMedia ? "downloading" : action.kind === "search" ? "searching" : "reading";
-      onEvent?.({ stage, message: action.label, step: step + 1, action: { kind: action.kind, target: action.target, cli: buildActionArgs(action) } });
+      await emit({ stage, message: action.label, step: step + 1, action: { kind: action.kind, target: action.target } });
       try {
         const execution = await runSocaiAction({
           action, config, env, signal,
           onProgress: (message) => {
             const clean = safeProgress(message);
-            if (clean) onEvent?.({ stage, message: clean });
+            if (clean) queueProgress({ stage, message: clean });
           },
         });
+        await flushProgress();
         executions.push(execution);
         const captured = extractEvidence(execution.data, action);
         items = mergeEvidence(items, captured);
@@ -153,15 +225,16 @@ export async function runSearch(
           stopReason = `The platform requires attention: ${observation.reason || observation.status || "login or access check"}.`;
         }
         await checkpoint();
-        if (captured.length) onEvent?.({ stage: "evidence", items: publicEvidence(items), message: `Captured ${items.length} records.` });
+        if (captured.length) await emit({ stage: "evidence", items: publicEvidence(items), message: `Captured ${items.length} records.` });
         activeEntry = undefined;
         if (observation.blocked) break;
       } catch (error) {
+        if (error?.name === "AbortError") throw error;
         signal?.throwIfAborted();
         Object.assign(entry, { status: "failed", observation: { ok: false, code: error.code, error: safeProgress(error.message) || "Browser operation failed." } });
         await checkpoint();
         activeEntry = undefined;
-        onEvent?.({ stage: "planning", message: "The operation failed. Jev is considering the remaining options." });
+        await emit({ stage: "planning", message: "The operation failed. Jev is considering the remaining options." });
       }
     }
   } catch (error) {
@@ -169,12 +242,18 @@ export async function runSearch(
       if (activeEntry?.status === "selected") activeEntry.status = "interrupted";
       status = "interrupted";
       stopReason = "The browser stream closed before this run completed.";
+      reportStatus = "interrupted";
+      reportKind = "fallback";
+      finalReport = buildGroundedResearchReport(reportInput());
       await checkpoint();
       throw error;
     }
     if (activeEntry?.status === "selected") activeEntry.status = "failed";
     status = "failed";
     stopReason = safeProgress(error.message) || "The research run failed before completion.";
+    reportStatus = "failed";
+    reportKind = "fallback";
+    finalReport = buildGroundedResearchReport(reportInput());
     await checkpoint();
     throw error;
   }
@@ -182,16 +261,75 @@ export async function runSearch(
     status = "step_limit";
     stopReason = `Reached the limit of ${maxSteps} operations before Jev chose to finish.`;
   }
+
+  reportStatus = "generating";
+  finalReport = buildGroundedResearchReport(reportInput());
+  await checkpoint();
+  await emit({
+    stage: "researching",
+    message: "Comparing captured claims, comments, engagement, and coverage gaps.",
+  });
+  try {
+    const configuredModel = String(env.OPENROUTER_REPORT_MODEL || "openai/gpt-4o-mini").trim();
+    const liveSynthesizer = typeof synthesizer === "function"
+      ? synthesizer
+      : !client && configuredModel.toLowerCase() !== "off"
+        ? (safeInput) => requestOpenRouterResearchReport(safeInput, {
+            apiKey,
+            model: configuredModel,
+            fetchImpl: reportFetchImpl,
+            signal,
+          })
+        : undefined;
+    const synthesis = await synthesizeResearchReport(reportInput(), { synthesizer: liveSynthesizer });
+    finalReport = synthesis.report;
+    reportKind = synthesis.kind;
+    reportModel = synthesis.model;
+    reportStatus = "streaming";
+    await checkpoint();
+
+    const chunks = splitReportChunks(finalReport);
+    for (const [index, chunk] of chunks.entries()) {
+      signal?.throwIfAborted();
+      await emit({
+        stage: "report",
+        message: "Writing the evidence-grounded report.",
+        chunk,
+        index: index + 1,
+        total: chunks.length,
+        kind: reportKind,
+        ...(reportModel ? { model: reportModel } : {}),
+      });
+      signal?.throwIfAborted();
+      if (onEvent && index < chunks.length - 1 && reportChunkDelayMs > 0) {
+        await delay(Math.min(250, Number(reportChunkDelayMs) || 0), undefined, { signal });
+      }
+    }
+    reportStatus = "completed";
+  } catch (error) {
+    if (signal?.aborted || error?.name === "AbortError") {
+      status = "interrupted";
+      stopReason = "The browser stream closed while the report was being delivered.";
+      reportStatus = "interrupted";
+      reportKind = "fallback";
+      reportModel = undefined;
+      finalReport = buildGroundedResearchReport(reportInput());
+      await checkpoint();
+      throw error;
+    }
+    status = "failed";
+    stopReason = safeProgress(error.message) || "The research report could not be delivered.";
+    reportStatus = "failed";
+    reportKind = "fallback";
+    reportModel = undefined;
+    finalReport = buildGroundedResearchReport(reportInput());
+    await checkpoint();
+    throw error;
+  }
   const stored = await checkpoint();
-  const run = {
-    ...stored, classification, actions,
-    command: executions.at(-1)?.command || "", evidenceCommand: executions[0]?.command || "",
-    evidenceCommands: executions.map((execution) => execution.command),
-    result: { ok: status === "completed", query: searchQuery, items },
-    socaiOutputs: executions.map((execution) => ({ command: execution.command, elapsedMs: execution.elapsedMs, text: execution.stdout })),
-  };
-  onEvent?.({ stage: "complete", status, message: status === "completed" ? "Evidence ready." : `Partial evidence saved. ${stopReason}` });
-  return run;
+  privateRunMedia.set(stored, { items });
+  await emit({ stage: "complete", status, message: status === "completed" ? "Evidence ready." : `Partial evidence saved. ${stopReason}` });
+  return stored;
 }
 
 function safeProgress(message) {
