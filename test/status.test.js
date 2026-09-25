@@ -111,4 +111,41 @@ for (const [errorCode, expected] of [
     assert.deepEqual(view.browser, { ready: false, label: expected[0], hint: expected[1] });
     assert.equal(view.error, "", "browser diagnostics must not trigger the global error toast");
   });
-}
+  }
+
+test("local provider readiness avoids asking for an OpenRouter key", () => {
+  const view = deriveStatusView({
+    jevConfigured: true,
+    jevModel: "kev-latest",
+    decisionProvider: "local",
+    socai: {
+      installed: true,
+      version: "0.6.0",
+      capabilities: { instagram: true, tiktok: true, linkedin: true },
+    },
+  });
+
+  assert.deepEqual(view.jev, { ready: true, label: "Local decision model ready" });
+});
+
+test("a provider error preserves independent socai readiness", () => {
+  const view = deriveStatusView({
+    jevConfigured: false,
+    decisionProvider: "unavailable",
+    decisionProviderError: "Decision provider configuration is invalid.",
+    socai: {
+      installed: true,
+      version: "0.6.0",
+      capabilities: { instagram: true, tiktok: true, linkedin: true },
+    },
+  });
+
+  assert.equal(view.error, "Decision provider configuration is invalid.");
+  assert.deepEqual(view.jev, { ready: false, label: "Decision provider unavailable" });
+  assert.deepEqual(view.socai, { ready: true, label: "socai v0.6.0 ready" });
+  assert.deepEqual(view.browser, {
+    ready: false,
+    label: "Chrome state unknown",
+    hint: "Update socai to enable read-only browser diagnostics.",
+  });
+});

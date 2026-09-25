@@ -102,6 +102,47 @@ test("runSearch lets Jev choose a specific post, then finish without an autonomo
   } finally { await rm(directory,{recursive:true,force:true}); }
 });
 
+test("runSearch can use a loopback Kev endpoint without an OpenRouter key", async () => {
+  const { directory, env } = await fixture();
+  delete env.OPENROUTER_API_KEY;
+  delete env.openrouter;
+  env.JEV_SOCIAL_SYSTEM_ONE_URL = "http://127.0.0.1:8009/v1/systemone";
+  env.JEV_SOCIAL_SYSTEM_ONE_MODEL = "kev-latest";
+  let actionStep = 0;
+  let calls = 0;
+  const decisionFetchImpl = async (url, options) => {
+    calls += 1;
+    assert.equal(url, env.JEV_SOCIAL_SYSTEM_ONE_URL);
+    assert.equal(options.headers.Authorization, undefined);
+    const request = JSON.parse(options.body);
+    if (request.questions.route) {
+      return Response.json({
+        model: "kev-latest",
+        answers: { route: { type: "choice", choice: "instagram_search", confidence: 0.99 } },
+      });
+    }
+    const criteria = request.questions.action.criteria;
+    const choice = actionStep++ === 0 ? matching(criteria, /^Search instagram/) : "finish";
+    return Response.json({
+      model: "kev-latest",
+      answers: { action: { type: "choice", choice, confidence: 0.99 } },
+    });
+  };
+
+  try {
+    const run = await runSearch(
+      { query: "find handmade art on Instagram", limit: 1 },
+      { env, decisionFetchImpl, reportChunkDelayMs: 0 },
+    );
+    assert.equal(run.classification.model, "kev-latest");
+    assert.deepEqual(run.actions.map((entry) => entry.action.kind), ["search", "finish"]);
+    assert.equal(run.reportKind, "evidence");
+    assert.equal(calls, 3);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("Jev opens a profile then selects a newly observed post", async () => {
   const {directory,env} = await fixture();
   const client = choices('instagram',(criteria,step) => {

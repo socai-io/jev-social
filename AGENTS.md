@@ -18,8 +18,9 @@ npm ci
 ```
 
 Offline development and tests do not need credentials. A live run additionally
-needs a local `.env` with an OpenRouter key that can access Jev, a compatible
-`socai CLI`, and a browser session that can access the selected platform.
+needs either an OpenRouter key that can access Jev or an explicit loopback
+TypeSafe-compatible decision endpoint, a compatible `socai CLI`, and a browser
+session that can access the selected platform.
 
 Never commit `.env`, API keys, browser data, downloaded media, run artifacts,
 or personal social-media data.
@@ -44,8 +45,10 @@ workflow uses the same commands after `npm ci`.
   and `search`.
 - `src/app.js` owns the Jev decision loop, checkpoints, event stream, and final
   run shape.
-- `src/classifier.js` calls the OpenRouter decisions endpoint and validates the
-  typed Jev response.
+- `src/decision-provider.js` selects OpenRouter or an explicit loopback System
+  One endpoint, bounds the network response, and prevents credential forwarding.
+- `src/classifier.js` builds platform choices and validates typed decision
+  responses independently of the selected provider.
 - `src/actions.js` builds the current finite action space from the goal,
   installed CLI capabilities, observed targets, and action history.
 - `src/socai.js` probes the installed CLI, maps selected actions to arguments,

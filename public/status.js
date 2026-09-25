@@ -15,6 +15,9 @@ export function deriveStatusView(status = {}) {
   }
 
   const installed = Boolean(status.socai?.installed);
+  const providerError = typeof status.decisionProviderError === "string"
+    ? status.decisionProviderError.trim()
+    : "";
   const available = PLATFORMS.filter((platform) => capabilities[platform]);
   const allReady = installed && available.length === PLATFORMS.length;
   let socaiLabel = "socai unavailable";
@@ -26,12 +29,16 @@ export function deriveStatusView(status = {}) {
   }
 
   return {
-    error: "",
+    error: providerError,
     capabilities,
     platforms: platformStatuses(capabilities, status.socai?.readiness?.platforms),
     jev: {
       ready: Boolean(status.jevConfigured),
-      label: status.jevConfigured ? "Jev ready" : "Jev needs a key",
+      label: providerError
+        ? "Decision provider unavailable"
+        : status.jevConfigured
+        ? status.decisionProvider === "local" ? "Local decision model ready" : "Jev ready"
+        : "Jev needs a key",
     },
     socai: { ready: allReady, label: socaiLabel },
     browser: browserStatus(status.socai?.readiness, installed),

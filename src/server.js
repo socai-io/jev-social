@@ -8,6 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getPrivateRunMedia, runSearch } from "./app.js";
 import { getConfigPath, readConfig, resolveApiKey } from "./config.js";
+import { resolveDecisionProvider } from "./decision-provider.js";
 import { publicEvidence } from "./evidence.js";
 import { errorPayload } from "./errors.js";
 import { loadLocalEnv } from "./env.js";
@@ -93,7 +94,8 @@ async function handleRequest(request, response, env, mediaRegistry) {
       } catch {
         return sendJson(response, 200, {
           jevConfigured: false,
-          jevModel: env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest",
+          jevModel: "unavailable",
+          decisionProvider: "unavailable",
           socai: {
             installed: false,
             version: null,
@@ -103,17 +105,24 @@ async function handleRequest(request, response, env, mediaRegistry) {
           configError: "Configuration could not be read.",
         });
       }
+      let provider;
       const socai = await probeSocai(config, env, undefined, { includeReadiness: true });
+      try {
+        provider = resolveDecisionProvider(env);
+      } catch {
+        return sendJson(response, 200, {
+          jevConfigured: false,
+          jevModel: "unavailable",
+          decisionProvider: "unavailable",
+          socai: publicSocaiStatus(socai),
+          decisionProviderError: "Decision provider configuration is invalid.",
+        });
+      }
       return sendJson(response, 200, {
-        jevConfigured: Boolean(resolveApiKey(config, env)),
-        jevModel: env.OPENROUTER_JEV_MODEL || "~typesafe/jev-latest",
-        socai: {
-          installed: socai.installed,
-          version: socai.version ?? null,
-          capabilities: socai.capabilities,
-          readiness: socai.readiness,
-          ...(socai.error ? { error: socai.error } : {}),
-        },
+        jevConfigured: provider.kind === "local" || Boolean(resolveApiKey(config, env)),
+        jevModel: provider.model,
+        decisionProvider: provider.kind,
+        socai: publicSocaiStatus(socai),
       });
     }
     if (request.method === "POST" && url.pathname === "/api/onboard") {
@@ -165,6 +174,16 @@ async function handleRequest(request, response, env, mediaRegistry) {
     if (status >= 500) console.error(error);
     return sendJson(response, status, errorPayload(error));
   }
+}
+
+function publicSocaiStatus(socai) {
+  return {
+    installed: socai.installed,
+    version: socai.version ?? null,
+    capabilities: socai.capabilities,
+    readiness: socai.readiness ?? unknownSocaiReadiness(Boolean(socai.installed)),
+    ...(socai.error ? { error: socai.error } : {}),
+  };
 }
 
 async function streamSearch(request, response, body, env, mediaRegistry) {

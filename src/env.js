@@ -5,7 +5,15 @@ import { fileURLToPath } from "node:url";
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WORKSPACE_ENV = path.resolve(PROJECT_ROOT, "../docs/work/20260918-2/.env");
-const AUTO_ENV_KEYS = new Set(["OPENROUTER_API_KEY", "OPENROUTER_JEV_MODEL", "openrouter"]);
+const AUTO_ENV_KEYS = new Set([
+  "OPENROUTER_API_KEY",
+  "OPENROUTER_JEV_MODEL",
+  "OPENROUTER_REPORT_MODEL",
+  "JEV_SOCIAL_SYSTEM_ONE_URL",
+  "JEV_SOCIAL_SYSTEM_ONE_MODEL",
+  "JEV_SOCIAL_SYSTEM_ONE_TIMEOUT_MS",
+  "openrouter",
+]);
 
 export async function loadLocalEnv(env = process.env) {
   const explicitEnvFile = env.JEV_SOCIAL_ENV_FILE?.trim();
@@ -18,10 +26,7 @@ export async function loadLocalEnv(env = process.env) {
   for (const candidate of candidates) {
     try {
       const values = parseEnv(await readFile(candidate.path, "utf8"));
-      for (const [key, value] of Object.entries(values)) {
-        if (!candidate.trusted && !AUTO_ENV_KEYS.has(key)) continue;
-        if (env[key] === undefined) env[key] = value;
-      }
+      mergeLocalEnv(env, values, { trusted: candidate.trusted });
       envFile = candidate.path;
       break;
     } catch (error) {
@@ -33,6 +38,14 @@ export async function loadLocalEnv(env = process.env) {
     env.OPENROUTER_API_KEY = env.openrouter.trim();
   }
   return { envFile };
+}
+
+export function mergeLocalEnv(env, values, { trusted = false } = {}) {
+  for (const [key, value] of Object.entries(values)) {
+    if (!trusted && !AUTO_ENV_KEYS.has(key)) continue;
+    if (env[key] === undefined) env[key] = value;
+  }
+  return env;
 }
 
 export function parseEnv(source) {
