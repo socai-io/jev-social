@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
@@ -65,6 +66,17 @@ test("package, plugin manifests, and Agent Skill identify the current release", 
   const runtimePins = skill.match(/github:socai-io\/jev-social#[0-9a-f]{40}/g) ?? [];
   assert.ok(runtimePins.length > 0, "the Agent Skill must pin an immutable runtime commit");
   assert.equal(new Set(runtimePins).size, 1, "all Agent Skill commands must use one runtime commit");
+  const runtimeCommit = runtimePins[0].split("#")[1];
+  const runtimePackage = JSON.parse(execFileSync(
+    "git",
+    ["show", `${runtimeCommit}:package.json`],
+    { cwd: new URL("..", import.meta.url), encoding: "utf8" },
+  ));
+  assert.equal(
+    runtimePackage.version,
+    packageJson.version,
+    "the immutable Agent Skill runtime must identify the current release",
+  );
 });
 
 test("the Pages artifact retains the .nojekyll marker", async () => {
@@ -99,6 +111,19 @@ test("the Pages landing exposes current structured metadata and recorded evidenc
     assert.match(landing, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
   assert.match(landing, /individual local observations, not a benchmark/i);
+});
+
+test("public docs expose the reproducible benchmark workflow without claiming results", async () => {
+  const [readme, llms] = await Promise.all([
+    readFile(new URL("../README.md", import.meta.url), "utf8"),
+    readFile(new URL("../site/llms.txt", import.meta.url), "utf8"),
+  ]);
+
+  for (const contents of [readme, llms]) {
+    assert.match(contents, /reproducible benchmark/i);
+    assert.match(contents, /benchmark\/README\.md/);
+    assert.match(contents, /no live (?:benchmark )?(?:measurements|results)/i);
+  }
 });
 
 test("the Grok plugin manifest exposes the released Jev Social skill", async () => {

@@ -30,11 +30,12 @@ const FLOATING_MODEL = /(?:^~|(?:^|[/_.-])latest(?=$|[:/_.-]))/i;
 const HELP = `jev-social benchmark runner
 
 Usage:
-  node benchmark/run.js --task <file> --jev-model <id> --socai-version <semver> \\
-    --socai-commit <sha> --profile-mode <existing|isolated> --region <id> \\
-    --condition <cold|warm>
+  node benchmark/run.js --task <file> --jev-social-version <semver> \\
+    --jev-social-commit <sha> --jev-model <id> --socai-version <semver> \\
+    --socai-commit <sha> --profile-mode <existing|isolated> \\
+    --region <id> --condition <cold|warm>
 
-The command writes exactly one validated, privacy-safe NDJSON row to stdout.
+After initialization, the command writes exactly one validated, privacy-safe NDJSON row to stdout.
 Progress stages go to stderr. Runtime failures are retained as failed or partial
 rows instead of being silently dropped.
 `;
@@ -269,13 +270,15 @@ export function buildBenchmarkRow({
   );
 
   return validateBenchmarkRow({
-    schema_version: 1,
+    schema_version: 2,
     run_id: runId,
     task_id: task.task_id,
     started_at: startedAt,
     ended_at: endedAt,
     platform: task.platform,
     outcome: terminal.outcome,
+    jev_social_version: metadata?.jev_social_version,
+    jev_social_commit: metadata?.jev_social_commit,
     jev_model: model,
     socai_version: metadata?.socai_version,
     socai_commit: metadata?.socai_commit,
@@ -369,6 +372,8 @@ const parseArgs = (args) => {
   const result = {};
   const names = new Map([
     ["--task", "task"],
+    ["--jev-social-version", "jev_social_version"],
+    ["--jev-social-commit", "jev_social_commit"],
     ["--jev-model", "jev_model"],
     ["--socai-version", "socai_version"],
     ["--socai-commit", "socai_commit"],
@@ -444,6 +449,8 @@ export async function executeBenchmark(
     totalMs: 0,
   });
   const metadata = {
+    jev_social_version: validatedMetadata.jev_social_version,
+    jev_social_commit: validatedMetadata.jev_social_commit,
     jev_model: validatedMetadata.jev_model,
     socai_version: validatedMetadata.socai_version,
     socai_commit: validatedMetadata.socai_commit,

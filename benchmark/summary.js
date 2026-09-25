@@ -10,8 +10,11 @@ const MINIMUM_RUNS = 10;
 const MAX_INPUT_BYTES = 16 * 1024 * 1024;
 const MAX_ROWS = 10_000;
 const GROUP_FIELDS = [
+  "schema_version",
   "task_id",
   "platform",
+  "jev_social_version",
+  "jev_social_commit",
   "jev_model",
   "socai_version",
   "socai_commit",
@@ -69,9 +72,11 @@ export function summarizeBenchmarkRows(inputRows) {
         id: `G${index + 1}`,
         ...groupIdentity(entries[0]),
         runs: entries.length,
-        publicationStatus: entries.length >= MINIMUM_RUNS
-          ? "READY"
-          : `INCOMPLETE (${entries.length}/${MINIMUM_RUNS})`,
+        publicationStatus: entries[0].schema_version < 2
+          ? "LEGACY SCHEMA (v1)"
+          : entries.length >= MINIMUM_RUNS
+            ? "READY"
+            : `INCOMPLETE (${entries.length}/${MINIMUM_RUNS})`,
         startedAt: entries.map((row) => row.started_at).sort()[0],
         endedAt: entries.map((row) => row.ended_at).sort().at(-1),
         outcomes,
@@ -95,7 +100,7 @@ export function summarizeBenchmarkRows(inputRows) {
     schemaVersion: 1,
     minimumRuns: MINIMUM_RUNS,
     rowCount: rows.length,
-    publicationReady: groups.every((group) => group.runs >= MINIMUM_RUNS),
+    publicationReady: groups.every((group) => group.publicationStatus === "READY"),
     groups,
   };
 }
@@ -127,11 +132,14 @@ export function renderBenchmarkSummary(summary) {
     "",
     "## Environment",
     "",
-    "| Group | Task ID | Jev model | socai | Profile | Region | Limit / steps | Date window (UTC) | Status |",
-    "| --- | --- | --- | --- | --- | --- | ---: | --- | --- |",
+    "| Group | Task ID | Jev Social | Jev model | socai | Profile | Region | Limit / steps | Date window (UTC) | Status |",
+    "| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- |",
   );
   for (const group of summary.groups) {
-    lines.push(`| ${group.id} | ${group.task_id} | ${group.jev_model} | ${group.socai_version} @ ${shortCommit(group.socai_commit)} | ${group.profile_mode} | ${group.region} | ${group.result_limit} / ${group.max_steps} | ${group.startedAt} – ${group.endedAt} | ${group.publicationStatus} |`);
+    const jevSocial = group.schema_version < 2
+      ? "legacy schema v1"
+      : `${group.jev_social_version} @ ${shortCommit(group.jev_social_commit)}`;
+    lines.push(`| ${group.id} | ${group.task_id} | ${jevSocial} | ${group.jev_model} | ${group.socai_version} @ ${shortCommit(group.socai_commit)} | ${group.profile_mode} | ${group.region} | ${group.result_limit} / ${group.max_steps} | ${group.startedAt} – ${group.endedAt} | ${group.publicationStatus} |`);
   }
 
   lines.push(
