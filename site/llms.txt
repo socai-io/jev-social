@@ -76,7 +76,13 @@ OpenCode can install the tested v0.1.8 Skill into its natively discovered projec
 npx skills add https://github.com/socai-io/jev-social/tree/v0.1.8/skills/jev-social --agent opencode
 ```
 
-This is a standard Agent Skill that calls the local socai CLI, not an OpenCode plugin.
+OpenClaw can install the v0.1.8 Skill from its immutable release commit into the current workspace:
+
+```bash
+npx skills add https://github.com/socai-io/jev-social/tree/c411ae1532dd37ab94f8164f13552ed05f4c9ecc/skills/jev-social --skill jev-social --agent openclaw --copy
+```
+
+This is a standard Agent Skill that calls the local socai CLI, not an OpenCode or OpenClaw plugin.
 
 ## Reproducible benchmark
 
