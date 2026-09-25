@@ -7,7 +7,8 @@
     "jev-social": "bin/jev-social.js"
   },
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./benchmark/schema": "./benchmark/schema.js"
   },
   "repository": {
     "type": "git",
@@ -18,6 +19,9 @@
     "url": "https://github.com/socai-io/jev-social/issues"
   },
   "files": [
+    "benchmark/schema.js",
+    "benchmark/README.md",
+    "benchmark/fixtures/valid-row.json",
     "bin",
     "docs/troubleshooting.md",
     "public",
@@ -29,7 +33,7 @@
   "scripts": {
     "start": "node ./bin/jev-social.js",
     "dev": "node --watch ./bin/jev-social.js serve --no-open",
-    "check": "node --check ./bin/jev-social.js && node --check ./src/server.js && node --check ./src/decision-provider.js && node --check ./src/evidence.js && node --check ./src/report.js && node --check ./public/app.js && node --check ./public/evidence-preview.js && node --check ./public/run-route.js && node --check ./public/report-download.js && node --check ./public/report-stream.js && node --check ./public/prompts.js && node --check ./public/status.js",
+    "check": "node --check ./bin/jev-social.js && node --check ./benchmark/schema.js && node --check ./src/server.js && node --check ./src/decision-provider.js && node --check ./src/evidence.js && node --check ./src/report.js && node --check ./public/app.js && node --check ./public/evidence-preview.js && node --check ./public/run-route.js && node --check ./public/report-download.js && node --check ./public/report-stream.js && node --check ./public/prompts.js && node --check ./public/status.js",
     "test": "node --test"
   },
   "engines": {
