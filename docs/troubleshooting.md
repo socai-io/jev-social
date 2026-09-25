@@ -155,8 +155,9 @@ Kev exposes the TypeSafe-compatible endpoint Jev Social needs. Start it separate
 ```bash
 git clone https://github.com/jaredpalmer/kev.git
 cd kev
+git checkout 2855ba2a55a80579176a459f78b95d03548cabb5
 uv sync --extra serve
-uv run --extra serve python -m kev.serve --run jaredpalmer/kev-4b --port 8009
+uv run --extra serve python -m kev.serve --run jaredpalmer/kev-4b@139fdd94f1b6a6ad80cc15e08fcb99cac885a101 --port 8009
 ```
 
 ```bash

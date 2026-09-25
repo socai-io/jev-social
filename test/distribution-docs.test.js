@@ -9,12 +9,57 @@ const packageJson = JSON.parse(
 const releaseTag = `v${packageJson.version}`;
 const pinnedSource = `github:socai-io/jev-social#v${packageJson.version}`;
 const pinnedSkillSource = `https://github.com/socai-io/jev-social/tree/v${packageJson.version}/skills/jev-social`;
+const kevRepoCommit = "2855ba2a55a80579176a459f78b95d03548cabb5";
+const kevModelRevision = "139fdd94f1b6a6ad80cc15e08fcb99cac885a101";
+const pinnedKevCommands = [
+  "git clone https://github.com/jaredpalmer/kev.git",
+  "cd kev",
+  `git checkout ${kevRepoCommit}`,
+  "uv sync --extra serve",
+  `uv run --extra serve python -m kev.serve --run jaredpalmer/kev-4b@${kevModelRevision} --port 8009`,
+];
 const publicDocs = [
   ["README.md", new URL("../README.md", import.meta.url)],
   ["docs/troubleshooting.md", new URL("../docs/troubleshooting.md", import.meta.url)],
   ["site/index.html", new URL("../site/index.html", import.meta.url)],
+  ["site/local-system-one/index.html", new URL("../site/local-system-one/index.html", import.meta.url)],
   ["site/llms.txt", new URL("../site/llms.txt", import.meta.url)],
 ];
+
+function normalizedVisibleText(contents) {
+  const attributeValues = [...contents.matchAll(/\b(?:aria-label|content|title)="([^"]*)"/gi)]
+    .map((match) => match[1])
+    .join(" ");
+  return `${contents.replace(/<[^>]*>/g, " ")} ${attributeValues}`
+    .replace(/&(?:nbsp|ensp|emsp|thinsp|hyphen|ndash|mdash);/gi, " ")
+    .replace(/&#(?:x[a-f\d]+|\d+);/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractKevCommands(contents) {
+  const prefixes = [
+    "git clone https://github.com/jaredpalmer/kev.git",
+    "cd kev",
+    "git checkout ",
+    "uv sync --extra serve",
+    "uv run --extra serve python -m kev.serve ",
+  ];
+  return contents
+    .replace(/<[^>]*>/g, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => prefixes.some((prefix) => line.startsWith(prefix)));
+}
+
+function assertNoAffirmativeOfflineClaim(contents) {
+  const normalized = normalizedVisibleText(contents);
+  const withoutExplicitLimit = normalized.replace(
+    /\bnot\s+(?:fully|completely)[\s-]+offline\b/gi,
+    "",
+  );
+  assert.doesNotMatch(withoutExplicitLimit, /\b(?:fully|completely)[\s-]+offline\b/i);
+}
 
 test("public no-clone commands require consent and pin the current release", async () => {
   for (const [name, url] of publicDocs) {
@@ -111,6 +156,69 @@ test("the Pages landing exposes current structured metadata and recorded evidenc
     assert.match(landing, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
   assert.match(landing, /individual local observations, not a benchmark/i);
+  assert.match(landing, /\.\/local-system-one\//);
+});
+
+test("the local System One guide is shipped and keeps its local boundary honest", async () => {
+  const [readme, troubleshooting, guide, sitemap, workflow] = await Promise.all([
+    readFile(new URL("../README.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/troubleshooting.md", import.meta.url), "utf8"),
+    readFile(new URL("../site/local-system-one/index.html", import.meta.url), "utf8"),
+    readFile(new URL("../site/sitemap.xml", import.meta.url), "utf8"),
+    readFile(new URL("../.github/workflows/pages.yml", import.meta.url), "utf8"),
+  ]);
+  const structuredData = guide.match(
+    /<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/,
+  );
+  assert.ok(structuredData, "the local guide must include JSON-LD");
+  const article = JSON.parse(structuredData[1]);
+  assert.equal(article["@type"], "TechArticle");
+  assert.equal(
+    article.url,
+    "https://socai-io.github.io/jev-social/local-system-one/",
+  );
+
+  assert.match(guide, /http:\/\/127\.0\.0\.1:8009\/v1\/systemone/);
+  assert.match(guide, /OPENROUTER_REPORT_MODEL=off/);
+  assert.match(guide, /No hosted key[\s\S]*Not fully offline/i);
+  assert.match(guide, /social sites still load through your browser/i);
+  for (const [name, contents] of [
+    ["README.md", readme],
+    ["docs/troubleshooting.md", troubleshooting],
+    ["site/local-system-one/index.html", guide],
+  ]) {
+    assert.deepEqual(
+      extractKevCommands(contents),
+      pinnedKevCommands,
+      `${name} must expose exactly one immutable Kev setup sequence`,
+    );
+    assert.doesNotMatch(
+      contents,
+      /--run\s+jaredpalmer\/kev-4b(?!@[0-9a-f]{40}\b)/,
+      `${name} must not expose a mutable Kev model reference`,
+    );
+  }
+  assertNoAffirmativeOfflineClaim(guide);
+  assert.match(sitemap, /https:\/\/socai-io\.github\.io\/jev-social\/local-system-one\//);
+  assert.match(workflow, /mkdir -p _site\/assets\/platforms _site\/local-system-one/);
+  assert.match(
+    workflow,
+    /cp site\/local-system-one\/index\.html _site\/local-system-one\//,
+  );
+});
+
+test("the offline-claim guard normalizes markup and encoded separators", () => {
+  for (const unsafeClaim of [
+    "works fully offline",
+    "works fully-offline",
+    "works fully&nbsp;offline",
+    "works fully&#45;offline",
+    "works fully <em>offline</em>",
+    '<meta name="description" content="works completely offline">',
+  ]) {
+    assert.throws(() => assertNoAffirmativeOfflineClaim(unsafeClaim));
+  }
+  assert.doesNotThrow(() => assertNoAffirmativeOfflineClaim("No hosted key. Not fully offline."));
 });
 
 test("public docs expose the reproducible benchmark workflow without claiming results", async () => {

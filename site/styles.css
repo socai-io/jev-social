@@ -4,6 +4,7 @@
   --paper: #f8f5ef;
   --white: #fff;
   --pink: #ff4fc8;
+  --pink-ink: #9b126f;
   --pink-soft: #ffc5ec;
   --blue: #dff5ff;
   --blue-strong: #40b9e7;
@@ -144,6 +145,16 @@ a {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 79, 200, 0.38), transparent 68%);
   animation: drift 8s ease-in-out infinite alternate;
+}
+
+.guide-hero {
+  min-height: 620px;
+}
+
+.guide-hero h1 {
+  max-width: 1120px;
+  font-size: clamp(54px, 8.2vw, 128px);
+  line-height: 0.88;
 }
 
 @keyframes drift {
@@ -373,7 +384,7 @@ h2 {
 .step {
   display: block;
   margin-bottom: 80px;
-  color: var(--pink);
+  color: var(--pink-ink);
   font: 700 12px/1 var(--mono);
 }
 
@@ -750,6 +761,10 @@ footer a {
 
   .hero {
     padding-top: 74px;
+  }
+
+  .guide-hero {
+    min-height: 580px;
   }
 
   .section-heading {
