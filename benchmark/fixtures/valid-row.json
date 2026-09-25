@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "run_id": "00000000-0000-4000-8000-000000000001",
+  "task_id": "00000000-0000-4000-8000-000000000002",
+  "started_at": "2026-09-25T00:00:00.000Z",
+  "ended_at": "2026-09-25T00:00:12.000Z",
+  "platform": "instagram",
+  "outcome": "success",
+  "jev_model": "typesafe/jev-1.13-20260917",
+  "socai_version": "0.6.0",
+  "socai_commit": "0123456789abcdef0123456789abcdef01234567",
+  "result_limit": 4,
+  "max_steps": 12,
+  "profile_mode": "existing",
+  "region": "synthetic-us",
+  "condition": "warm",
+  "jev_step_latency_ms": [350, 450],
+  "timing_ms": {
+    "jev_total": 800,
+    "socai_browser": 9000,
+    "media": 1200,
+    "total": 12000
+  },
+  "evidence": {
+    "records": 4,
+    "comments": 12,
+    "downloaded_media_count": 0,
+    "downloaded_media_bytes": 0
+  },
+  "stop_reason": "goal_satisfied",
+  "failure_category": null
+}
