@@ -1,0 +1,7 @@
+{
+  "task_id": "b61d7f1b-e12a-4581-bf83-10273f35a2ab",
+  "platform": "linkedin",
+  "goal": "Find public posts about AI product management, open relevant posts or profiles, and inspect available evidence.",
+  "result_limit": 4,
+  "max_steps": 12
+}

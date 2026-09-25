@@ -4,11 +4,14 @@
   "description": "Jev-directed Instagram, TikTok, and LinkedIn browser operations through the socai CLI",
   "type": "module",
   "bin": {
-    "jev-social": "bin/jev-social.js"
+    "jev-social": "bin/jev-social.js",
+    "jev-social-benchmark": "benchmark/run.js"
   },
   "exports": {
     ".": "./src/index.js",
-    "./benchmark/schema": "./benchmark/schema.js"
+    "./benchmark/run": "./benchmark/run.js",
+    "./benchmark/schema": "./benchmark/schema.js",
+    "./benchmark/summary": "./benchmark/summary.js"
   },
   "repository": {
     "type": "git",
@@ -19,9 +22,14 @@
     "url": "https://github.com/socai-io/jev-social/issues"
   },
   "files": [
+    "benchmark/run.js",
     "benchmark/schema.js",
+    "benchmark/summary.js",
     "benchmark/README.md",
     "benchmark/fixtures/valid-row.json",
+    "benchmark/tasks/instagram.json",
+    "benchmark/tasks/linkedin.json",
+    "benchmark/tasks/tiktok.json",
     "bin",
     "docs/troubleshooting.md",
     "public",
@@ -33,7 +41,9 @@
   "scripts": {
     "start": "node ./bin/jev-social.js",
     "dev": "node --watch ./bin/jev-social.js serve --no-open",
-    "check": "node --check ./bin/jev-social.js && node --check ./benchmark/schema.js && node --check ./src/server.js && node --check ./src/decision-provider.js && node --check ./src/evidence.js && node --check ./src/report.js && node --check ./public/app.js && node --check ./public/evidence-preview.js && node --check ./public/run-route.js && node --check ./public/report-download.js && node --check ./public/report-stream.js && node --check ./public/prompts.js && node --check ./public/status.js",
+    "benchmark:run": "node ./benchmark/run.js",
+    "benchmark:summarize": "node ./benchmark/summary.js",
+    "check": "node --check ./bin/jev-social.js && node --check ./benchmark/run.js && node --check ./benchmark/schema.js && node --check ./benchmark/summary.js && node --check ./src/server.js && node --check ./src/decision-provider.js && node --check ./src/evidence.js && node --check ./src/report.js && node --check ./public/app.js && node --check ./public/evidence-preview.js && node --check ./public/run-route.js && node --check ./public/report-download.js && node --check ./public/report-stream.js && node --check ./public/prompts.js && node --check ./public/status.js",
     "test": "node --test"
   },
   "engines": {

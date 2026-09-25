@@ -190,6 +190,15 @@ export async function chooseAction({ goal, platform, actions, history, items, li
     },
   };
   const decision = await requestChoice({ ...options, request, key: "action" });
-  if (decision.confidence < 0.35) throw new AppError("Jev is uncertain about the next operation. Narrow the request and try again.", { code: "LOW_ACTION_CONFIDENCE" });
+  if (decision.confidence < 0.35) {
+    throw new AppError("Jev is uncertain about the next operation. Narrow the request and try again.", {
+      code: "LOW_ACTION_CONFIDENCE",
+      details: {
+        elapsedMs: decision.elapsedMs,
+        model: decision.model,
+        modelVerified: decision.modelVerified,
+      },
+    });
+  }
   return { ...decision, action: actions.find((action) => action.id === decision.choice) };
 }

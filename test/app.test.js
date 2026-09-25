@@ -3,7 +3,7 @@ import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { runSearch } from "../src/app.js";
+import { getPrivateRunMedia, runSearch } from "../src/app.js";
 import { listRuns, readRun } from "../src/runs.js";
 
 async function fixture() {
@@ -15,7 +15,8 @@ const [platform, command] = args;
 const result = (data) => console.log(JSON.stringify(data));
 if (args.includes('--help')) console.log('Commands: search get-posts get-videos profile author company history page_state');
 else if (command === 'search') {
-  if (args[2] === 'gated') result({ok:false, reason:'login_required', results:[]});
+  if (String(args[2]).startsWith('fail')) process.exitCode=2;
+  else if (args[2] === 'gated') result({ok:false, reason:'login_required', results:[]});
   else if (args[2] === 'empty') result({ok:true, results:[]});
   else if (platform === 'tiktok') result({ok:true, cards:[
     {video_id:'111',url:'https://www.tiktok.com/@demo/video/111',title:'Unrelated'},
@@ -178,6 +179,8 @@ test("runSearch downloads only the TikTok video selected by Jev after an explici
     assert.equal(run.command, undefined);
     assert.equal(run.actions[1].action.downloadMedia,true);
     assert.equal(run.result.items.find((item)=>item.url.endsWith('/222')).video.local_path, undefined);
+    assert.equal(getPrivateRunMedia(run).downloadItems.length, 1);
+    assert.equal(getPrivateRunMedia(run).downloadItems[0].video.local_path, "/tmp/video.mp4");
     assert.doesNotMatch(JSON.stringify(run), /\/tmp\/video\.mp4|local_path|socaiOutputs/);
   } finally { await rm(directory,{recursive:true,force:true}); }
 });
@@ -207,6 +210,21 @@ test("step exhaustion and login gates preserve honest partial results", async ()
     assert.equal(gated.result.items.length,0);
     assert.match(gated.stopReason,/login_required/);
   } finally { await rm(directory,{recursive:true,force:true}); }
+});
+
+test("failed browser operations retain monotonic elapsed time", async () => {
+  const { directory, env } = await fixture();
+  const client = choices("instagram", (criteria, step) =>
+    step === 0 ? matching(criteria, /^Search instagram/) : "finish",
+  );
+  try {
+    const run = await runSearch({ query: "fail on Instagram" }, { env, client });
+    assert.equal(run.actions[0].status, "failed");
+    assert.ok(Number.isSafeInteger(run.actions[0].elapsedMs));
+    assert.ok(run.actions[0].elapsedMs >= 0);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("an invented action never reaches the CLI", async () => {
