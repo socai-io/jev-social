@@ -101,6 +101,19 @@ test("the Pages landing exposes current structured metadata and recorded evidenc
   assert.match(landing, /individual local observations, not a benchmark/i);
 });
 
+test("public docs expose the reproducible benchmark workflow without claiming results", async () => {
+  const [readme, llms] = await Promise.all([
+    readFile(new URL("../README.md", import.meta.url), "utf8"),
+    readFile(new URL("../site/llms.txt", import.meta.url), "utf8"),
+  ]);
+
+  for (const contents of [readme, llms]) {
+    assert.match(contents, /reproducible benchmark/i);
+    assert.match(contents, /benchmark\/README\.md/);
+    assert.match(contents, /no live (?:benchmark )?(?:measurements|results)/i);
+  }
+});
+
 test("the Grok plugin manifest exposes the released Jev Social skill", async () => {
   const manifest = JSON.parse(
     await readFile(new URL("../.grok-plugin/plugin.json", import.meta.url), "utf8"),

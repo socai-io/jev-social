@@ -22,6 +22,8 @@ const task = {
 };
 
 const metadata = {
+  jev_social_version: "0.1.8",
+  jev_social_commit: "abcdef0123456789abcdef0123456789abcdef01",
   jev_model: "typesafe/jev-1.13-20260917",
   socai_version: "0.6.0",
   socai_commit: "0123456789abcdef0123456789abcdef01234567",
@@ -94,6 +96,9 @@ test("builds one validated row from a completed run and keeps component timings 
   });
 
   assert.equal(row.outcome, "success");
+  assert.equal(row.schema_version, 2);
+  assert.equal(row.jev_social_version, metadata.jev_social_version);
+  assert.equal(row.jev_social_commit, metadata.jev_social_commit);
   assert.equal(row.stop_reason, "goal_satisfied");
   assert.deepEqual(row.jev_step_latency_ms, [100, 200, 300, 150]);
   assert.deepEqual(row.timing_ms, {
@@ -311,6 +316,8 @@ test("counts only media tied to an explicit download action below configured run
 
 const cliArguments = [
   "--task", "benchmark/tasks/tiktok.json",
+  "--jev-social-version", metadata.jev_social_version,
+  "--jev-social-commit", metadata.jev_social_commit,
   "--jev-model", metadata.jev_model,
   "--socai-version", metadata.socai_version,
   "--socai-commit", metadata.socai_commit,

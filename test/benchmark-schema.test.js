@@ -28,6 +28,29 @@ test("accepts and normalizes the documented synthetic row", () => {
   assert.deepEqual(normalized, { ...fixture, region: "synthetic-us" });
 });
 
+test("schema v2 requires immutable Jev Social runtime metadata while v1 stays readable", () => {
+  const current = clone();
+  const normalized = validateBenchmarkRow(current);
+  assert.equal(normalized.jev_social_version, "0.1.8");
+  assert.equal(normalized.jev_social_commit, current.jev_social_commit);
+
+  for (const field of ["jev_social_version", "jev_social_commit"]) {
+    const missing = structuredClone(current);
+    delete missing[field];
+    assert.throws(
+      () => validateBenchmarkRow(missing),
+      (error) => error instanceof BenchmarkRowValidationError && error.path === field,
+    );
+  }
+
+  const legacy = clone();
+  legacy.schema_version = 1;
+  delete legacy.jev_social_version;
+  delete legacy.jev_social_commit;
+  assert.equal(validateBenchmarkRow(legacy).schema_version, 1);
+  assert.equal(Object.hasOwn(validateBenchmarkRow(legacy), "jev_social_version"), false);
+});
+
 test("rejects missing required fields and unknown enum values", () => {
   const missing = clone();
   delete missing.run_id;
@@ -161,6 +184,13 @@ test("requires opaque IDs and pinned socai metadata", () => {
   assert.throws(
     () => validateBenchmarkRow(commit),
     (error) => error instanceof BenchmarkRowValidationError && error.path === "socai_commit",
+  );
+
+  const jevSocialCommit = clone();
+  jevSocialCommit.jev_social_commit = "main";
+  assert.throws(
+    () => validateBenchmarkRow(jevSocialCommit),
+    (error) => error instanceof BenchmarkRowValidationError && error.path === "jev_social_commit",
   );
 
   for (const value of [

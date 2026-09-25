@@ -73,6 +73,26 @@ test("marks every exact environment group with fewer than ten rows as incomplete
   assert.match(renderBenchmarkSummary(summary), /Publication gate: INCOMPLETE/);
 });
 
+test("separates Jev Social runtimes and never publishes legacy schema groups", () => {
+  const current = row(0);
+  const otherRuntime = row(1);
+  otherRuntime.jev_social_commit = "1234567890abcdef1234567890abcdef12345678";
+
+  const split = summarizeBenchmarkRows([current, otherRuntime]);
+  assert.equal(split.groups.length, 2);
+  assert.ok(split.groups.every((group) => group.runs === 1));
+
+  const legacy = summarizeBenchmarkRows(Array.from({ length: 10 }, (_, index) => {
+    const value = row(index);
+    value.schema_version = 1;
+    delete value.jev_social_version;
+    delete value.jev_social_commit;
+    return value;
+  }));
+  assert.equal(legacy.publicationReady, false);
+  assert.equal(legacy.groups[0].publicationStatus, "LEGACY SCHEMA (v1)");
+});
+
 test("rejects invalid rows instead of silently dropping them", () => {
   const invalid = row(0);
   invalid.api_key = "secret";

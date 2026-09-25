@@ -1,4 +1,4 @@
-const TOP_LEVEL_FIELDS = new Set([
+const V1_TOP_LEVEL_FIELDS = new Set([
   "schema_version",
   "run_id",
   "task_id",
@@ -19,6 +19,11 @@ const TOP_LEVEL_FIELDS = new Set([
   "evidence",
   "stop_reason",
   "failure_category",
+]);
+const V2_TOP_LEVEL_FIELDS = new Set([
+  ...V1_TOP_LEVEL_FIELDS,
+  "jev_social_version",
+  "jev_social_commit",
 ]);
 
 const TIMING_FIELDS = new Set(["jev_total", "socai_browser", "media", "total"]);
@@ -204,7 +209,8 @@ const normalizeEvidence = (value) => {
 
 export const validateBenchmarkRow = (value) => {
   rejectDenylistedFields(value);
-  strictRecord(value, TOP_LEVEL_FIELDS, "row");
+  const schemaVersion = integer(value?.schema_version, "schema_version", { min: 1, max: 2 });
+  strictRecord(value, schemaVersion === 1 ? V1_TOP_LEVEL_FIELDS : V2_TOP_LEVEL_FIELDS, "row");
 
   const startedAt = timestamp(value.started_at, "started_at");
   const endedAt = timestamp(value.ended_at, "ended_at");
@@ -314,9 +320,21 @@ export const validateBenchmarkRow = (value) => {
   if (/(?:^~|(?:^|[/_.-])latest(?=$|[:/_.-]))/i.test(jevModel)) {
     fail("jev_model", "must be an immutable model identifier, not a latest alias");
   }
+  const jevSocial = schemaVersion === 2
+    ? {
+        jev_social_version: cleanString(value.jev_social_version, "jev_social_version", {
+          max: 64,
+          pattern: /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/,
+        }).replace(/^v/, ""),
+        jev_social_commit: cleanString(value.jev_social_commit, "jev_social_commit", {
+          max: 40,
+          pattern: /^[a-f0-9]{7,40}$/i,
+        }).toLowerCase(),
+      }
+    : {};
 
   return {
-    schema_version: integer(value.schema_version, "schema_version", { min: 1, max: 1 }),
+    schema_version: schemaVersion,
     run_id: opaqueId(value.run_id, "run_id"),
     task_id: opaqueId(value.task_id, "task_id"),
     started_at: startedAt,
@@ -334,6 +352,7 @@ export const validateBenchmarkRow = (value) => {
       pattern: /^[A-Za-z0-9][A-Za-z0-9._-]*$/,
     }),
     condition: enumValue(value.condition, BENCHMARK_CONDITIONS, "condition"),
+    ...jevSocial,
     jev_step_latency_ms: jevStepLatency,
     timing_ms: timing,
     evidence,
