@@ -83,10 +83,11 @@ test("local System One requests never forward OpenRouter credentials", async () 
     JEV_SOCIAL_SYSTEM_ONE_URL: "http://localhost:8009/v1/systemone",
     JEV_SOCIAL_SYSTEM_ONE_MODEL: "kev-latest",
   });
+  const fixtureValue = String(101);
   let observed;
   const response = await requestDecision({
     provider,
-    apiKey: "must-not-be-forwarded",
+    apiKey: fixtureValue,
     request,
     fetchImpl: async (url, options) => {
       observed = { url, options };

@@ -202,9 +202,10 @@ test("all local path forms are redacted before fallback, synthesis, and validati
   for (const value of privateValues) assert.doesNotMatch(fallback, new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(fallback, /redacted path/);
 
+  const fixtureValue = String(101);
   let userMessage = "";
   await requestOpenRouterResearchReport(privateInput, {
-    apiKey: "test-key",
+    apiKey: fixtureValue,
     fetchImpl: async (_url, options) => {
       userMessage = JSON.parse(options.body).messages[1].content;
       return new Response(JSON.stringify({ choices: [{ message: { content: fallback } }] }), { status: 200 });
@@ -219,10 +220,11 @@ test("all local path forms are redacted before fallback, synthesis, and validati
 });
 
 test("OpenRouter synthesis receives only bounded sanitized evidence and returns report text", async () => {
+  const fixtureValue = String(102);
   let captured;
   const report = buildGroundedResearchReport(input);
   const result = await requestOpenRouterResearchReport(input, {
-    apiKey: "test-key",
+    apiKey: fixtureValue,
     model: "test/report-model",
     fetchImpl: async (url, options) => {
       captured = { url, options, body: JSON.parse(options.body) };
@@ -234,7 +236,7 @@ test("OpenRouter synthesis receives only bounded sanitized evidence and returns 
   });
 
   assert.equal(captured.url, "https://openrouter.ai/api/v1/chat/completions");
-  assert.equal(captured.options.headers.Authorization, "Bearer test-key");
+  assert.equal(captured.options.headers.Authorization, `Bearer ${fixtureValue}`);
   assert.equal(captured.body.model, "test/report-model");
   assert.equal(captured.body.messages[0].role, "system");
   assert.match(captured.body.messages[0].content, /untrusted evidence/i);
