@@ -299,6 +299,11 @@ test("the social research guide is shipped with exact platform and safety bounda
     article?.url,
     "https://socai-io.github.io/jev-social/social-research/",
   );
+  assert.equal(article?.headline, "Open-source social media research with Jev Social");
+  assert.equal(
+    article?.description,
+    "Open-source Instagram, TikTok, and LinkedIn research agent. Jev chooses bounded steps; the local socai CLI captures source-linked evidence in Chrome.",
+  );
   assert.equal(article?.about?.codeRepository, "https://github.com/socai-io/jev-social");
   assert.equal(faq?.mainEntity?.length, 4);
   const networkFaq = faq?.mainEntity?.find(
@@ -312,6 +317,35 @@ test("the social research guide is shipped with exact platform and safety bounda
     guide,
     /<dt>What still needs network access\?<\/dt>\s*<dd>Chrome and the selected social platform still require normal network access\. With an OpenRouter key configured, report synthesis also uses OpenRouter unless OPENROUTER_REPORT_MODEL=off; only typed decision calls can move to an explicit loopback provider\.<\/dd>/,
   );
+  assert.match(
+    guide,
+    /<title>Open-source social media research agent \| Jev Social<\/title>/,
+  );
+  assert.match(
+    guide,
+    /<meta name="description" content="Open-source Instagram, TikTok, and LinkedIn research agent\. Jev chooses bounded steps; the local socai CLI captures source-linked evidence in Chrome\.">/,
+  );
+  assert.match(
+    guide,
+    /<meta property="og:title" content="Jev Social — open-source social media research agent">/,
+  );
+  assert.match(
+    guide,
+    /<meta property="og:description" content="Jev chooses bounded steps while the local socai CLI captures source-linked Instagram, TikTok, and LinkedIn evidence in Chrome\.">/,
+  );
+  assert.match(
+    guide,
+    /<meta name="twitter:title" content="Jev Social — open-source social media research agent">/,
+  );
+  assert.match(
+    guide,
+    /<meta name="twitter:description" content="Bounded Jev decisions, real Chrome evidence, and source-linked Instagram, TikTok, and LinkedIn research\.">/,
+  );
+  assert.match(
+    guide,
+    /<p class="hero-copy">\s*Jev Social is an open-source, read-only social media research agent for Instagram, TikTok, and LinkedIn\. Jev chooses what to inspect next; the local socai CLI performs that operation in Chrome; captured sources stay beside the report\.\s*<\/p>/,
+  );
+  assert.doesNotMatch(guide, /<\/p>\s*<\/p>/, "the guide must not contain a stray closing paragraph tag");
 
   for (const expected of [
     "Creators, posts, Reels, comments",
