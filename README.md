@@ -22,7 +22,7 @@ Jev chooses each next operation: search, open a particular post or profile, read
   <img src="https://raw.githubusercontent.com/socai-io/jev-social/main/docs/platforms/linkedin.svg" height="32" alt="LinkedIn">
 </p>
 
-[Live site](https://socai-io.github.io/jev-social/) · [Social research guide](https://socai-io.github.io/jev-social/social-research/) · [Real 64-second Jev report](docs/example-report.md) · [Recorded TikTok video evidence](docs/tiktok-evidence.md) · [Discord](https://discord.gg/CpQdA7bwt8) · [Jev](https://typesafe.ai/)
+[Live site](https://socai-io.github.io/jev-social/) · [Social research guide](https://socai-io.github.io/jev-social/social-research/) · [Security and data flow](SECURITY.md) · [Real 64-second Jev report](docs/example-report.md) · [Recorded TikTok video evidence](docs/tiktok-evidence.md) · [Discord](https://discord.gg/CpQdA7bwt8) · [Jev](https://typesafe.ai/)
 
 ## Try it
 
@@ -77,6 +77,15 @@ Only commands exposed by the installed socai CLI are offered. Targets come from 
 The run stores each choice, confidence, command, observed result summary, and elapsed time. Login/access gates, decision failures, and step limits produce partial results rather than a success claim. After collection, Jev Social can use the existing OpenRouter key to synthesize a concise report from a bounded, sanitized evidence payload. Every accepted finding must cite a captured source; foreign URLs, missing citations, raw JSON, and local paths fail validation and fall back to the deterministic evidence report. Report sections stream into the fixed panel while captured cards stay visible, and the downloaded `report.md` is the same Markdown shown in the browser. The synthesizer has no browser or shell tools and does not depend on `socai research`.
 
 The report model defaults to `openai/gpt-4o-mini` and may incur normal provider usage. Set `OPENROUTER_REPORT_MODEL` to another available model, or set it to `off` to keep report generation fully deterministic. Speed varies with the number of chosen operations, the live site, and the selected report model.
+
+## Privacy and local data
+
+- Jev Social does not read or copy the browser cookie store directly. The installed `socai CLI` uses the Chrome profile you selected; use a separate profile or test account for sensitive research.
+- OpenRouter is the default decision provider. Decision requests contain the full research goal plus the requested platform, current action labels, source URLs, earlier action summaries, and short visible-text excerpts. The application does not intentionally add cookies, downloaded media, raw CLI JSON, or filesystem fields, but user input and visible social content are untrusted and can themselves contain personal or path-like text. Optional report synthesis receives a separate bounded, sanitized evidence payload; set `OPENROUTER_REPORT_MODEL=off` to disable that second model call. A configured Kev or Simple Jev endpoint keeps decision requests on the explicit loopback server and never receives the OpenRouter key.
+- Recoverable checkpoints live under `${JEV_SOCIAL_HOME:-~/.jev-social}`; `socai` stores its own evidence and downloaded media separately. There is no automatic cleanup schedule. Stop the app, inspect the run, and remove only the specific checkpoint or evidence directory you no longer need.
+- TikTok media download becomes an available action only when the research goal explicitly requests an offline copy. That intent is retained in the operation history; there is no second confirmation after the explicit request.
+
+The complete field limits, file permissions, provider-retention boundary, browser-session boundary, and recovery procedure are documented in [Security and data flow](SECURITY.md#data-flow-credentials-and-retention).
 
 ## Recorded evidence
 

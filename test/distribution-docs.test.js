@@ -246,6 +246,28 @@ test("the README keeps Jev Social promotion separate from the socai runtime", as
   assert.doesNotMatch(readme, /^socai\s+(?:instagram|tiktok|linkedin)\s+/im);
 });
 
+test("the README exposes the privacy and local-data boundaries", async () => {
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const privacySection = readme.match(
+    /## Privacy and local data\r?\n([\s\S]*?)(?=\r?\n## )/,
+  );
+  const securityLinkIndex = readme.indexOf("[Security and data flow](SECURITY.md)");
+  const firstInstallCommandIndex = readme.indexOf("npx github:");
+
+  assert.ok(privacySection, "the README must include a dedicated privacy section");
+  assert.notEqual(securityLinkIndex, -1, "the README must link to the security data-flow policy");
+  assert.notEqual(firstInstallCommandIndex, -1, "the README must retain the no-clone install command");
+  assert.ok(
+    securityLinkIndex < firstInstallCommandIndex,
+    "the security link must appear before the first installation command",
+  );
+  assert.match(privacySection[1], /does not read or copy the browser cookie store directly/i);
+  assert.match(privacySection[1], /user input and visible social content are untrusted/i);
+  assert.match(privacySection[1], /OPENROUTER_REPORT_MODEL=off/);
+  assert.match(privacySection[1], /no automatic cleanup schedule/i);
+  assert.match(privacySection[1], /only when the research goal explicitly requests/i);
+});
+
 test("the social research guide is shipped with exact platform and safety boundaries", async () => {
   const [guide, sitemap, workflow, llms] = await Promise.all([
     readFile(new URL("../site/social-research/index.html", import.meta.url), "utf8"),
