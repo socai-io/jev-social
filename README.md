@@ -189,7 +189,7 @@ For browser connection checks, platform login barriers, and safe status diagnost
 
 ## Contribute
 
-New contributors can start with the current [good first issues](https://github.com/socai-io/jev-social/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22). Read [CONTRIBUTING.md](CONTRIBUTING.md) for the offline test and privacy requirements before opening a pull request.
+New contributors can start with the current [good first issues](https://github.com/socai-io/jev-social/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22). Read [CONTRIBUTING.md](https://github.com/socai-io/jev-social/blob/main/CONTRIBUTING.md) for the offline test and privacy requirements before opening a pull request.
 
 ---
 
