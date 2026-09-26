@@ -2,7 +2,7 @@
 
 # Jev Social — browser-grounded social research
 
-**Jev is cool. Giving it access to your social media is cooler.**
+**Jev is cool. Giving it a bounded view of social evidence is cooler.**
 
 [![GitHub stars](https://img.shields.io/github/stars/socai-io/jev-social?style=flat-square&label=stars)](https://github.com/socai-io/jev-social/stargazers)
 [![Skills installs](https://skills.sh/b/socai-io/jev-social)](https://skills.sh/socai-io/jev-social/jev-social)
@@ -22,7 +22,7 @@ Jev chooses each next operation: search, open a particular post or profile, read
   <img src="https://raw.githubusercontent.com/socai-io/jev-social/main/docs/platforms/linkedin.svg" height="32" alt="LinkedIn">
 </p>
 
-[Live site](https://socai-io.github.io/jev-social/) · [Social research guide](https://socai-io.github.io/jev-social/social-research/) · [Security and data flow](SECURITY.md) · [Real 64-second Jev report](docs/example-report.md) · [Recorded TikTok video evidence](docs/tiktok-evidence.md) · [Discord](https://discord.gg/CpQdA7bwt8) · [Jev](https://typesafe.ai/)
+[⭐ Star Jev Social](https://github.com/socai-io/jev-social/stargazers) · [Live site](https://socai-io.github.io/jev-social/) · [Social research guide](https://socai-io.github.io/jev-social/social-research/) · [Security and data flow](SECURITY.md) · [Real 64-second Jev report](docs/example-report.md) · [Recorded TikTok video evidence](docs/tiktok-evidence.md) · [Discord](https://discord.gg/CpQdA7bwt8) · [Jev](https://typesafe.ai/)
 
 ## Try it
 
