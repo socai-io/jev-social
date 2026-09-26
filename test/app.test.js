@@ -144,6 +144,62 @@ test("runSearch can use a loopback Kev endpoint without an OpenRouter key", asyn
   }
 });
 
+test("a named platform does not bypass a low-confidence supported-vs-unsupported decision", async () => {
+  const { directory, env } = await fixture();
+  const client = {
+    async systemOne(request) {
+      if (request.questions.route) {
+        assert.equal(request.state.requested_platform, "tiktok");
+        return {
+          model: "laya:en",
+          answers: {
+            route: { type: "choice", choice: "tiktok_search", confidence: 0.2 },
+          },
+        };
+      }
+      throw new Error("action selection must not run");
+    },
+  };
+
+  try {
+    await assert.rejects(
+      runSearch(
+        { query: "Research viral camera reviews on TikTok", platform: "auto", limit: 1 },
+        { env, client, reportChunkDelayMs: 0 },
+      ),
+      (error) => error.code === "LOW_CLASSIFICATION_CONFIDENCE",
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("an unconstrained low-confidence platform decision still fails closed", async () => {
+  const { directory, env } = await fixture();
+  try {
+    await assert.rejects(
+      runSearch(
+        { query: "Find emerging creators", platform: "auto" },
+        {
+          env,
+          client: {
+            async systemOne() {
+              return {
+                answers: {
+                  route: { type: "choice", choice: "instagram_search", confidence: 0.2 },
+                },
+              };
+            },
+          },
+        },
+      ),
+      (error) => error.code === "LOW_CLASSIFICATION_CONFIDENCE",
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("Jev opens a profile then selects a newly observed post", async () => {
   const {directory,env} = await fixture();
   const client = choices('instagram',(criteria,step) => {

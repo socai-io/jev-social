@@ -78,6 +78,38 @@ test("classifySearch defaults to the resolved local provider model", async () =>
   assert.equal(result.model, "kev-local-test");
 });
 
+test("a local router may report the canonical model that answered", async () => {
+  const provider = resolveDecisionProvider({
+    JEV_SOCIAL_SYSTEM_ONE_URL: "http://127.0.0.1:11435/v1/systemone",
+    JEV_SOCIAL_SYSTEM_ONE_MODEL: "laya",
+  });
+  let sent;
+  const result = await classifySearch({
+    goal: "find design creators on Instagram",
+    provider,
+    fetchImpl: async (_url, options) => {
+      sent = JSON.parse(options.body);
+      return Response.json({
+        model: "laya:en",
+        answers: {
+          route: {
+            type: "choice",
+            choice: "instagram_search",
+            confidence: 0.91,
+            probabilities: { instagram_search: 0.91, unsupported: 0.09 },
+          },
+        },
+        usage: { input_tokens: 180, output_tokens: 0 },
+      });
+    },
+  });
+
+  assert.equal(sent.model, "laya");
+  assert.equal(result.model, "laya:en");
+  assert.equal(result.modelVerified, true);
+  assert.deepEqual(result.usage, { input_tokens: 180, output_tokens: 0 });
+});
+
 test("local System One requests never forward OpenRouter credentials", async () => {
   const provider = resolveDecisionProvider({
     JEV_SOCIAL_SYSTEM_ONE_URL: "http://localhost:8009/v1/systemone",
