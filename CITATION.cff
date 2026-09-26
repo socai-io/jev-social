@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use Jev Social in research, please cite the software using this metadata."
+type: software
+title: "Jev Social"
+abstract: >-
+  A read-only social research application where Jev selects bounded Instagram,
+  TikTok, and LinkedIn operations, the local socai CLI executes them in the
+  user's Chrome session, and the result preserves source-linked evidence and a
+  cited report.
+authors:
+  - name: "socai-io"
+    website: "https://github.com/socai-io"
+version: 0.1.8
+date-released: 2026-09-25
+license: MIT
+repository-code: "https://github.com/socai-io/jev-social"
+url: "https://socai-io.github.io/jev-social/"
+keywords:
+  - browser agent
+  - OSINT
+  - Instagram
+  - Jev
+  - LinkedIn
+  - social media research
+  - TikTok
