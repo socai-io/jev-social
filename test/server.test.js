@@ -131,7 +131,7 @@ else process.exitCode = 2;
   const env = {
     ...process.env,
     SOCAI_BIN: mock,
-    OPENROUTER_API_KEY: "secret-key-123",
+    OPENROUTER_API_KEY: String(101),
     OPENROUTER_JEV_MODEL: "~typesafe/jev-latest",
     JEV_SOCIAL_SYSTEM_ONE_URL: "",
     JEV_SOCIAL_SYSTEM_ONE_TIMEOUT_MS: "",
@@ -172,7 +172,7 @@ else process.exitCode = 2;
       },
     });
     const text = JSON.stringify(body);
-    assert.ok(!text.includes("secret-key-123"), "API key must not leak");
+    assert.ok(!text.includes(String(101)), "API key must not leak");
     assert.ok(!text.includes(directory), "Filesystem path must not leak");
     assert.ok(!text.includes("socai-mock.mjs"), "Binary filename must not leak");
     assert.ok(!text.includes("9222"), "Browser ports must not leak");

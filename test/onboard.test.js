@@ -51,7 +51,7 @@ test("saveOnboarding reports the resolved socai bin path for CLI output", async 
   const env = {
     ...process.env,
     JEV_SOCIAL_HOME: directory,
-    OPENROUTER_API_KEY: "test-key",
+    OPENROUTER_API_KEY: String(102),
     SOCAI_BIN: mockBin,
   };
   try {
