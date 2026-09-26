@@ -8,17 +8,17 @@ const ROUTE_TO_PLATFORM = {
   tiktok_search: "tiktok",
   linkedin_search: "linkedin",
 };
-const PLATFORM_TOKEN = "(?:instagram|insta|tiktok|tik[\\s-]?tok|linked[\\s-]?in)";
+const PLATFORM_PATTERN_SOURCE = "(?:instagram|insta|tiktok|tik[\\s-]?tok|linked[\\s-]?in)";
 const DIRECT_PLATFORM_ROUTE = new RegExp(
-  `\\b(?:search|research|explore|browse|scan|monitor|track|investigate|analy[sz]e|review|find|discover|look\\s+up)\\s+(?:on\\s+|in\\s+|from\\s+|via\\s+|using\\s+)?(?<platform>${PLATFORM_TOKEN})\\b`,
+  `\\b(?:search|research|explore|browse|scan|monitor|track|investigate|analy[sz]e|review|find|discover|look\\s+up)\\s+(?:on\\s+|in\\s+|from\\s+|via\\s+|using\\s+)?(?<platform>${PLATFORM_PATTERN_SOURCE})\\b`,
   "giu",
 );
 const PREPOSITION_PLATFORM_ROUTE = new RegExp(
-  `\\b(?:search|research|explore|browse|scan|monitor|track|investigate|analy[sz]e|review|find|discover|look\\s+up)\\b[^.;!?\\n]{0,100}?\\b(?:on|in|from|via|using)\\s+(?<platform>${PLATFORM_TOKEN})\\b`,
+  `\\b(?:search|research|explore|browse|scan|monitor|track|investigate|analy[sz]e|review|find|discover|look\\s+up)\\b[^.;!?\\n]{0,100}?\\b(?:on|in|from|via|using)\\s+(?<platform>${PLATFORM_PATTERN_SOURCE})\\b`,
   "giu",
 );
 const COORDINATED_PLATFORM_ROUTE = new RegExp(
-  `\\b(?:on|in|from|via|using)\\s+${PLATFORM_TOKEN}\\s*(?:,|and|or|/)\\s*${PLATFORM_TOKEN}\\b`,
+  `\\b(?:on|in|from|via|using)\\s+${PLATFORM_PATTERN_SOURCE}\\s*(?:,|and|or|/)\\s*${PLATFORM_PATTERN_SOURCE}\\b`,
   "iu",
 );
 const MUTATION_ACTIONS = [
