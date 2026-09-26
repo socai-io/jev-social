@@ -1,43 +1,66 @@
 # Real run: AI founders on Instagram
 
-This is the report produced by a local Jev Social run on September 18, 2026. The goal was `find ai founders on instagram`. Jev selected two searches and one post-detail read; socai captured four previewable records in **63.969 seconds**. The report is preserved here so you can inspect the output before connecting your own browser.
+This is a preserved local Jev Social run from September 18, 2026. The goal was `find ai founders on instagram`. Jev selected two searches and one post-detail read; socai captured four previewable records in **63.969 seconds**. This audited public version keeps the run structure and generalized observations, uses opaque evidence IDs, and separates the one opened post from three search-result cards.
 
-Runtime depends on the live site, browser session, selected operations, and network. This is one recorded run, not a benchmark.
+Runtime depends on the live site, browser session, selected operations, and network. This is one recorded run, not a benchmark or a representative sample.
+
+## Preserved research contract
+
+| Field | Recorded value |
+| --- | --- |
+| Goal | `find ai founders on instagram` |
+| Platform | Instagram |
+| Run date | 2026-09-18 |
+| Search queries | `AI founder`; `AI startup founder` |
+| Browser operations | Two searches; one post-detail read |
+| Captured records | Four unique source URLs |
+| Evidence depth | One opened post; three discovery cards |
+| Elapsed time | 63.969 seconds |
+
+The historical artifact retained the run date and query set, but the exact capture timestamp and record-to-query mapping were not retained. It also did not preserve predeclared inclusion or exclusion rules, the final stopping rationale, or a deduplication log. The provider and model identity were not retained in this public artifact, so provider-side storage and retention for this run cannot be reconstructed.
 
 ## Executive summary
 
-Using two focused Instagram searches—**“AI founder”** and **“AI startup founder”**—the run found four posts with directly previewable image or video assets. The strongest fully inspected post was a January 12, 2026 video about **Aman Sanger**, identified by the post author as Cursor/Anysphere’s co-founder. It had **18K likes and 195 comments** at capture time.
+The run captured four Instagram result cards with previewable image or video assets. Only E01 was opened for post details. It shows one third-party business-story account framing an AI founder story around execution, valuation, and personal outcomes. Post date and engagement fields were captured locally but are omitted from this public copy to avoid republishing account-level social data.
 
-The results skewed toward **founder-success storytelling**: large valuations, exits, fundraising, very young founders, and AI lowering the cost of building software. These were mostly third-party business inspiration or news posts, not first-person posts by the founders.
+Only E01 supports an inspected-post observation. E02–E04 are discovery hypotheses, not findings: their card text suggests possible acquisition, ethics, and young-founder angles, but no post detail, comment text, or media content was inspected for those records. This sample therefore cannot establish a dominant theme, audience reaction, or prevalence across Instagram.
 
-## Evidence table
+## Evidence ledger
 
-| Post | Founder / company presented | Concrete evidence captured | Engagement / audience evidence |
-| --- | --- | --- | --- |
-| [Aman Sanger / Cursor (Anysphere)](https://www.instagram.com/p/DTassyCjPSs/) | The author, `@theindianhustles`, calls Aman Sanger the co-founder of AI coding platform Cursor and says Anysphere reached a $30B valuation. | **Fully inspected.** The caption frames the story around coding, execution, and belief rather than inherited wealth. Published **2026-01-12**. These valuation, age, and net-worth statements are the post author’s claims, not independently verified here. | **18,000 likes; 195 comments; 15 comments visibly available** in the post metadata. No individual comment or reply text was captured before the research limit. |
-| [Maor Shlomo / Base44](https://www.instagram.com/p/DLKMx6XpO8L/) | Search result describes Maor Shlomo as solo founder of Base44, an AI app builder sold to Wix. | The post claims a bootstrapped six-month build, 250K users, $189K monthly profit, an $80M founder outcome, and an eight-person team; it labels **TechCrunch** as its source. These are post claims only. | No post-detail engagement or comments captured. |
-| [Mira Murati / Thinking Machines Lab](https://www.instagram.com/p/DOHfO0yjUqa/) | Search result describes Mira Murati as leading Thinking Machines Lab, a public-benefit AI startup. | The caption emphasizes ethics, transparency, and human-centered AI; it claims a $12B valuation. This is an outlier versus the wealth and exit framing in the other results. | No post-detail engagement or comments captured. |
-| [Thomas Guthrie / Runwise](https://www.instagram.com/p/DWTm3gCDVDR/) | Search result describes 15-year-old Thomas Guthrie as founder of Runwise, an AI/no-code workflow builder. | The post’s central claim is that AI, open-source models, and no-code tools enable teens to launch startups and hire across age hierarchies. It cites a Wall Street Journal report generally, but no linked source was captured. | No post-detail engagement or comments captured. |
+| ID | Restricted source reference | Evidence state | What was actually observed | What was not captured |
+| --- | --- | --- | --- | --- |
+| E01 | Withheld from public copy | `opened-post` | The opened post described an AI coding-platform co-founder and framed the story around coding, execution, belief, valuation, and personal outcomes. Post date, engagement fields, and comment-count metadata were captured locally. | No individual comment or reply text was captured; the author's claims were not independently verified. |
+| E02 | Withheld from public copy | `discovery-only` | Captured search-card text described a solo app-builder founder and included user, profit, acquisition, and team-size claims. | The post was not opened. Author identity, publication date, full caption, engagement, comments, media, and attribution were not verified. |
+| E03 | Withheld from public copy | `discovery-only` | Captured search-card text described an AI-lab leader and mentioned ethics, transparency, human-centered AI, and a valuation claim. | The post was not opened. Author identity, publication date, full caption, engagement, comments, media, and valuation were not verified. |
+| E04 | Withheld from public copy | `discovery-only` | Captured search-card text described a youth-founder claim, AI/no-code workflows, and cross-age hiring. | The post was not opened. Author identity, publication date, full caption, engagement, comments, media, and attribution were not verified. |
 
-## Key themes
+## Claim-to-evidence matrix
 
-1. **AI as leverage for small teams and solo founders.** Base44 is framed as a solo, bootstrapped AI product; the Runwise post argues that no-code and open-source AI reduce the team, capital, and experience needed to ship.
-2. **Outcome-led founder narratives dominate.** Cursor/Anysphere is framed through valuation and billionaire status; Base44 through acquisition price, user count, and profit.
-3. **Credentials and seniority are challenged.** The Aman Sanger post contrasts execution with inherited advantage and conventional business pedigree. The Runwise post makes the stronger age-based argument.
-4. **Ethics is a notable outlier.** The Mira Murati result focuses on integrity, transparency, and trust rather than wealth, speed, or scale.
+| Candidate conclusion | Supporting records | Counterevidence | Coverage boundary | Confidence |
+| --- | --- | --- | --- | --- |
+| One inspected third-party post used execution and outcome framing for an AI founder story. | E01 | None captured | One opened Instagram post; no comment text | Low outside this record |
+| The searches may surface acquisition, ethics, and young-founder narratives worth inspecting next. | E02, E03, E04 | Not searched | Discovery cards only; no post bodies or media inspected | Not assessable as a finding |
+| Instagram discussion broadly favors founder-success storytelling. | None sufficient | No disagreement sample captured | Four cards and one opened post cannot support a platform-level conclusion | Unsupported |
 
-## Limits
+## Limits and provenance gaps
 
-- Search-result and caption claims are not independent verification. Valuations, revenue, user counts, ages, net-worth figures, exits, and funding claims should be checked against primary sources before reuse.
-- The results are third-party curator, news, or inspiration accounts—not confirmed founder-owned Instagram accounts.
-- Only the Aman Sanger post was inspected in detail. Engagement, dates, author identities, media details, comments, and replies for the other three remain unverified.
-- No disagreement could be documented because comment and reply text was not captured within this run.
+- Search-card text and the opened post author's statements are not independent verification. Valuations, revenue, user counts, ages, net-worth figures, exits, and funding claims require primary-source checks before reuse.
+- E01 visibly came from a third-party account. E02–E04 were not confirmed as founder-owned accounts because their detail pages were not opened.
+- Only E01 was inspected in detail. Engagement, dates, author identities, media details, comments, and replies for E02–E04 remain unverified.
+- No comment or reply text was captured, so audience reaction and disagreement are not assessable.
+- The exact capture timestamp, per-record query provenance, inclusion and exclusion rules, stopping rationale, and historical provider metadata are unavailable. They are reported as gaps rather than reconstructed.
+
+## Privacy, publication, and retention
+
+This public revision intentionally withholds the four canonical source URLs, displayed handles, names, exact post dates, engagement counts, ages, and monetary figures. The original local run object recorded source URLs; opaque IDs preserve the evidence structure without republishing identifying social data. This page is a sanitized trace of the run shape, not an independent audit of what mutable Instagram pages displayed during the historical capture. It also omits cookies, browser endpoints, expiring media URLs, raw socai output, downloaded media, and local filesystem paths.
+
+Jev Social applies no automatic cleanup schedule. This document does not prove that the local run artifacts were deleted; the operator remains responsible for reviewing and removing saved run data and any socai artifacts. The current provider payload, browser-session, and retention boundaries are documented in [SECURITY.md](../SECURITY.md), but that current policy does not fill the historical metadata gaps above.
 
 ## Sources
 
-1. [Aman Sanger / Cursor (Anysphere)](https://www.instagram.com/p/DTassyCjPSs/)
-2. [Maor Shlomo / Base44](https://www.instagram.com/p/DLKMx6XpO8L/)
-3. [Mira Murati / Thinking Machines Lab](https://www.instagram.com/p/DOHfO0yjUqa/)
-4. [Thomas Guthrie / Runwise](https://www.instagram.com/p/DWTm3gCDVDR/)
+1. E01 — canonical source withheld; opened post
+2. E02 — canonical source withheld; discovery card only
+3. E03 — canonical source withheld; discovery card only
+4. E04 — canonical source withheld; discovery card only
 
 [Run Jev Social](../README.md#run-it) · [Open the live site](https://socai-io.github.io/jev-social/)
