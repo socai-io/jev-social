@@ -33,9 +33,10 @@ jobs:
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Assemble the static site
         run: |
-          mkdir -p _site/assets/platforms _site/local-system-one
+          mkdir -p _site/assets/platforms _site/local-system-one _site/social-research
           cp site/index.html site/styles.css site/favicon.svg site/robots.txt site/sitemap.xml site/llms.txt site/a7d8dcce78db561a70661682fc57f53cd04f3b50f3bddb6bf62627d5024afb57.txt _site/
           cp site/local-system-one/index.html _site/local-system-one/
+          cp site/social-research/index.html _site/social-research/
           cp docs/banner.png docs/social-preview.jpg docs/jev-social.gif _site/assets/
           cp docs/platforms/instagram.png docs/platforms/tiktok.png docs/platforms/linkedin.svg _site/assets/platforms/
           touch _site/.nojekyll

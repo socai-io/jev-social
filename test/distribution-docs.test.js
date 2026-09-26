@@ -41,6 +41,7 @@ const publicDocs = [
   ["docs/troubleshooting.md", new URL("../docs/troubleshooting.md", import.meta.url)],
   ["site/index.html", new URL("../site/index.html", import.meta.url)],
   ["site/local-system-one/index.html", new URL("../site/local-system-one/index.html", import.meta.url)],
+  ["site/social-research/index.html", new URL("../site/social-research/index.html", import.meta.url)],
   ["site/llms.txt", new URL("../site/llms.txt", import.meta.url)],
 ];
 
@@ -210,6 +211,53 @@ test("the Pages landing exposes current structured metadata and recorded evidenc
   }
   assert.match(landing, /individual local observations, not a benchmark/i);
   assert.match(landing, /\.\/local-system-one\//);
+  assert.match(landing, /\.\/social-research\//);
+  assert.doesNotMatch(landing, /github\.com\/socai-io\/socai/);
+  assert.doesNotMatch(landing, /https:\/\/(?:www\.)?socai\.io/);
+});
+
+test("the social research guide is shipped with exact platform and safety boundaries", async () => {
+  const [guide, sitemap, workflow, llms] = await Promise.all([
+    readFile(new URL("../site/social-research/index.html", import.meta.url), "utf8"),
+    readFile(new URL("../site/sitemap.xml", import.meta.url), "utf8"),
+    readFile(new URL("../.github/workflows/pages.yml", import.meta.url), "utf8"),
+    readFile(new URL("../site/llms.txt", import.meta.url), "utf8"),
+  ]);
+  const structuredData = guide.match(
+    /<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/,
+  );
+  assert.ok(structuredData, "the social research guide must include JSON-LD");
+  const graph = JSON.parse(structuredData[1])["@graph"];
+  assert.ok(Array.isArray(graph));
+  const article = graph.find((entry) => entry["@type"] === "TechArticle");
+  const faq = graph.find((entry) => entry["@type"] === "FAQPage");
+  assert.equal(
+    article?.url,
+    "https://socai-io.github.io/jev-social/social-research/",
+  );
+  assert.equal(article?.about?.codeRepository, "https://github.com/socai-io/jev-social");
+  assert.equal(faq?.mainEntity?.length, 4);
+
+  for (const expected of [
+    "Creators, posts, Reels, comments",
+    "Videos, authors, comments, media",
+    "People, content, companies",
+    "Media download appears only when the original goal explicitly requests it",
+    "does not post, like, follow, message, purchase, or change settings",
+    "partial evidence",
+  ]) {
+    assert.match(guide, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+  }
+  assert.doesNotMatch(guide, /github\.com\/socai-io\/socai/);
+  assert.doesNotMatch(llms, /github\.com\/socai-io\/socai/);
+  assertNoAffirmativeOfflineClaim(guide);
+  assert.match(sitemap, /https:\/\/socai-io\.github\.io\/jev-social\/social-research\//);
+  assert.match(llms, /https:\/\/socai-io\.github\.io\/jev-social\/social-research\//);
+  assert.match(workflow, /mkdir -p _site\/assets\/platforms _site\/local-system-one _site\/social-research/);
+  assert.match(
+    workflow,
+    /cp site\/social-research\/index\.html _site\/social-research\//,
+  );
 });
 
 test("the local System One guide is shipped and keeps its local boundary honest", async () => {

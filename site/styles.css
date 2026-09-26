@@ -674,6 +674,35 @@ h3 {
   color: var(--white);
 }
 
+.faq-list {
+  margin: 0;
+  border: 1px solid var(--ink);
+  background: var(--white);
+  box-shadow: 10px 10px 0 var(--blue-strong);
+}
+
+.faq-list div {
+  padding: 20px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.faq-list div:last-child {
+  border-bottom: 0;
+}
+
+.faq-list dt {
+  margin-bottom: 8px;
+  font: 700 12px/1.3 var(--mono);
+  text-transform: uppercase;
+}
+
+.faq-list dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
 footer {
   display: grid;
   grid-template-columns: auto 1fr auto;
