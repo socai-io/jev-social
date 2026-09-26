@@ -160,6 +160,9 @@ test("package, plugin manifests, and Agent Skill identify the current release", 
 
   assert.equal(codexManifest.version, packageJson.version);
   assert.equal(grokManifest.version, packageJson.version);
+  assert.equal(codexManifest.homepage, packageJson.homepage);
+  assert.equal(codexManifest.repository, "https://github.com/socai-io/jev-social");
+  assert.equal(codexManifest.interface.websiteURL, packageJson.homepage);
   assert.ok(skill.includes(`release \`${releaseTag}\``));
 
   const runtimePins = skill.match(/github:socai-io\/jev-social#[0-9a-f]{40}/g) ?? [];

@@ -28,7 +28,7 @@
     "capabilities": [
       "Read"
     ],
-    "websiteURL": "https://socai.io/",
+    "websiteURL": "https://socai-io.github.io/jev-social/",
     "defaultPrompt": [
       "Research this topic across supported social platforms.",
       "Compare the strongest captured posts and comments.",
