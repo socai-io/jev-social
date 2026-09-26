@@ -301,6 +301,17 @@ test("the social research guide is shipped with exact platform and safety bounda
   );
   assert.equal(article?.about?.codeRepository, "https://github.com/socai-io/jev-social");
   assert.equal(faq?.mainEntity?.length, 4);
+  const networkFaq = faq?.mainEntity?.find(
+    (entry) => entry.name === "What still needs network access?",
+  );
+  assert.equal(
+    networkFaq?.acceptedAnswer?.text,
+    "Chrome and the selected social platform still require normal network access. With an OpenRouter key configured, report synthesis also uses OpenRouter unless OPENROUTER_REPORT_MODEL=off; only typed decision calls can move to an explicit loopback provider.",
+  );
+  assert.match(
+    guide,
+    /<dt>What still needs network access\?<\/dt>\s*<dd>Chrome and the selected social platform still require normal network access\. With an OpenRouter key configured, report synthesis also uses OpenRouter unless OPENROUTER_REPORT_MODEL=off; only typed decision calls can move to an explicit loopback provider\.<\/dd>/,
+  );
 
   for (const expected of [
     "Creators, posts, Reels, comments",
