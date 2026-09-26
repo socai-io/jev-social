@@ -246,6 +246,15 @@ test("the README keeps Jev Social promotion separate from the socai runtime", as
   assert.doesNotMatch(readme, /^socai\s+(?:instagram|tiktok|linkedin)\s+/im);
 });
 
+test("the local UI keeps project links scoped to Jev Social", async () => {
+  const landing = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+
+  assert.match(landing, /https:\/\/socai-io\.github\.io\/jev-social\/social-research\//);
+  assert.match(landing, /https:\/\/github\.com\/socai-io\/jev-social/);
+  assert.doesNotMatch(landing, /https:\/\/(?:www\.)?socai\.io/);
+  assert.doesNotMatch(landing, /github\.com\/socai-io\/socai(?:\.git)?(?=$|[\s/?#)"'<])/i);
+});
+
 test("the README exposes the privacy and local-data boundaries", async () => {
   const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
   const privacySection = readme.match(
