@@ -24,6 +24,17 @@ Jev chooses each next operation: search, open a particular post or profile, read
 
 [Live site](https://socai-io.github.io/jev-social/) · [Real 64-second Jev report](docs/example-report.md) · [Recorded TikTok video evidence](docs/tiktok-evidence.md) · [Product story](https://socai.io/blog/jev-social-media-automation/) · [socai](https://github.com/socai-io/socai) · [Discord](https://discord.gg/CpQdA7bwt8) · [Jev](https://typesafe.ai/)
 
+## Try it
+
+With Node 20+ and Chrome already signed in to Instagram, TikTok, or LinkedIn:
+
+```bash
+npx github:socai-io/jev-social#v0.1.8 onboard
+npx github:socai-io/jev-social#v0.1.8
+```
+
+Onboarding prompts for the OpenRouter key and offers to install the official `socai CLI` when it is missing. The second command opens the loopback-only demo.
+
 ![Earlier routing-only demo](https://raw.githubusercontent.com/socai-io/jev-social/main/docs/jev-social.gif)
 
 The recording above shows the earlier routing-only prototype. Current runs include a history of every operation chosen by Jev.
