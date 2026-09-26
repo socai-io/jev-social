@@ -17,12 +17,24 @@ const releaseCommit = execFileSync(
 const pinnedOpenClawSkillSource = `https://github.com/socai-io/jev-social/tree/${releaseCommit}/skills/jev-social`;
 const kevRepoCommit = "2855ba2a55a80579176a459f78b95d03548cabb5";
 const kevModelRevision = "139fdd94f1b6a6ad80cc15e08fcb99cac885a101";
+const simpleJevRepoCommit = "c077d5dfdb5c2c7dd24b17d5f556f07e0162dc1c";
+const simpleJevModelRevision = "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a";
 const pinnedKevCommands = [
   "git clone https://github.com/jaredpalmer/kev.git",
   "cd kev",
   `git checkout ${kevRepoCommit}`,
   "uv sync --extra serve",
   `uv run --extra serve python -m kev.serve --run jaredpalmer/kev-4b@${kevModelRevision} --port 8009`,
+];
+const pinnedSimpleJevCommands = [
+  "git clone https://github.com/featherless-ai/simple-jev.git",
+  "cd simple-jev",
+  `git checkout ${simpleJevRepoCommit}`,
+  "python3 -m venv .venv",
+  "source .venv/bin/activate",
+  "python -m pip install -e './hf-server'",
+  `python hf-server/hf_server.py --model Qwen/Qwen3.5-4B --revision ${simpleJevModelRevision} --served-model-name simple-jev-qwen3.5-4b --enforce-model-id --device auto --dtype bfloat16 --max-model-len 16384 --max-choice-options 255 --max-batch-size 4 --max-batch-tokens 16384 --host 127.0.0.1 --port 8000`,
+  "curl --fail http://127.0.0.1:8000/health",
 ];
 const publicDocs = [
   ["README.md", new URL("../README.md", import.meta.url)],
@@ -47,9 +59,27 @@ function extractKevCommands(contents) {
   const prefixes = [
     "git clone https://github.com/jaredpalmer/kev.git",
     "cd kev",
-    "git checkout ",
+    `git checkout ${kevRepoCommit}`,
     "uv sync --extra serve",
     "uv run --extra serve python -m kev.serve ",
+  ];
+  return contents
+    .replace(/<[^>]*>/g, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => prefixes.some((prefix) => line.startsWith(prefix)));
+}
+
+function extractSimpleJevCommands(contents) {
+  const prefixes = [
+    "git clone https://github.com/featherless-ai/simple-jev.git",
+    "cd simple-jev",
+    `git checkout ${simpleJevRepoCommit}`,
+    "python3 -m venv .venv",
+    "source .venv/bin/activate",
+    "python -m pip install -e './hf-server'",
+    "python hf-server/hf_server.py ",
+    "curl --fail http://127.0.0.1:8000/health",
   ];
   return contents
     .replace(/<[^>]*>/g, "")
@@ -202,9 +232,12 @@ test("the local System One guide is shipped and keeps its local boundary honest"
   );
 
   assert.match(guide, /http:\/\/127\.0\.0\.1:8009\/v1\/systemone/);
+  assert.match(guide, /http:\/\/127\.0\.0\.1:8000\/v1\/systemone/);
   assert.match(guide, /OPENROUTER_REPORT_MODEL=off/);
   assert.match(guide, /No hosted key[\s\S]*Not fully offline/i);
   assert.match(guide, /social sites still load through your browser/i);
+  assert.match(guide, /seven-case check covers decision compatibility/i);
+  assert.match(guide, /docs\/simple-jev\.md/);
   for (const [name, contents] of [
     ["README.md", readme],
     ["docs/troubleshooting.md", troubleshooting],
@@ -221,6 +254,16 @@ test("the local System One guide is shipped and keeps its local boundary honest"
       `${name} must not expose a mutable Kev model reference`,
     );
   }
+  assert.deepEqual(
+    extractSimpleJevCommands(guide),
+    pinnedSimpleJevCommands,
+    "the local guide must expose exactly one immutable Simple Jev setup sequence",
+  );
+  assert.doesNotMatch(
+    guide,
+    /--model\s+Qwen\/Qwen3\.5-4B(?![\s\S]{0,160}--revision\s+[0-9a-f]{40}\b)/,
+    "the Simple Jev setup must pin the model revision",
+  );
   assertNoAffirmativeOfflineClaim(guide);
   assert.match(sitemap, /https:\/\/socai-io\.github\.io\/jev-social\/local-system-one\//);
   assert.match(workflow, /mkdir -p _site\/assets\/platforms _site\/local-system-one/);
