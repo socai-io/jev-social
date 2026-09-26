@@ -216,6 +216,36 @@ test("the Pages landing exposes current structured metadata and recorded evidenc
   assert.doesNotMatch(landing, /https:\/\/(?:www\.)?socai\.io/);
 });
 
+test("the README keeps Jev Social promotion separate from the socai runtime", async () => {
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const sourceCheckout = readme.match(
+    /To work from a source checkout instead:\r?\n[\s\S]*?```bash\r?\n([\s\S]*?)\r?\n```/,
+  );
+
+  assert.match(readme, /\bsocai CLI\b/);
+  assert.match(readme, /star Jev Social/i);
+  assert.ok(sourceCheckout, "the README must retain a fenced source-checkout sequence");
+  assert.deepEqual(
+    sourceCheckout[1].split(/\r?\n/),
+    [
+      "git clone https://github.com/socai-io/jev-social.git",
+      "cd jev-social",
+      "npm install",
+      "npm start -- onboard",
+      "npm start",
+    ],
+  );
+  assert.match(readme, /On Linux,[^.]+(?:PATH|SOCAI_BIN)[^.]+onboarding\./);
+  assert.doesNotMatch(
+    readme,
+    /https?:\/\/(?:www\.)?github\.com\/socai-io\/socai(?:\.git)?(?=$|[\s/?#)"'<])/i,
+  );
+  assert.doesNotMatch(readme, /https:\/\/(?:www\.)?socai\.io/);
+  assert.doesNotMatch(readme, /(?:star|visit|try|explore|check out) (?:the )?socai\b/i);
+  assert.doesNotMatch(readme, /(?:call|run|use|install|download) (?:the )?socai(?: CLI)? directly/i);
+  assert.doesNotMatch(readme, /^socai\s+(?:instagram|tiktok|linkedin)\s+/im);
+});
+
 test("the social research guide is shipped with exact platform and safety boundaries", async () => {
   const [guide, sitemap, workflow, llms] = await Promise.all([
     readFile(new URL("../site/social-research/index.html", import.meta.url), "utf8"),
