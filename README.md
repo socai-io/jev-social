@@ -162,6 +162,8 @@ npx github:socai-io/jev-social#v0.1.8
 
 The local endpoint must be plain HTTP on `localhost`, `127.0.0.1`, or `::1`, with the exact `/v1/systemone` path. Jev Social does not send the OpenRouter key to it, rejects redirects and oversized responses, and keeps the same typed choice validation. Local inference allows up to 120 seconds by default; lower it with `JEV_SOCIAL_SYSTEM_ONE_TIMEOUT_MS`. `OPENROUTER_REPORT_MODEL=off` uses the deterministic source-linked report; the browser and social-platform traffic still runs through local `socai` and Chrome.
 
+[Simple Jev](https://github.com/featherless-ai/simple-jev) is also compatible when it is self-hosted on loopback with a Choice-capable model. The [tested setup and compatibility matrix](docs/simple-jev.md) pin the evaluated Jev Social release, Simple Jev source, and model revision; the recorded decision timings are not browser-speed claims.
+
 Opens `http://127.0.0.1:8766`. Loopback only. Leave the platform on **Jev · auto**, type a goal, watch the timer.
 
 ```bash
