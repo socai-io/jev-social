@@ -91,7 +91,7 @@ The complete field limits, file permissions, provider-retention boundary, browse
 
 | Recorded run | Captured result | Elapsed time | Verification boundary |
 | --- | --- | ---: | --- |
-| [Instagram Jev research loop](docs/example-report.md) | Four source-linked records after two searches and one post-detail read | 63.969 s | Complete dated run; claims remain limited to captured evidence |
+| [Instagram Jev research loop](docs/example-report.md) | Four captured records after two searches and one post-detail read | 63.969 s | Sanitized public copy; one opened post is separated from three discovery cards |
 | [TikTok CLI search](docs/tiktok-evidence.md#search) | Five public TikTok result URLs | 7.570 s | socai CLI timing, not Jev decision-loop timing |
 | [TikTok video detail](docs/tiktok-evidence.md#video-detail-and-media-download) | Metadata, a 7,988,959-byte MP4, and a 95,592-byte poster | 38.263 s | Partial run: media succeeded, comments were unavailable |
 
