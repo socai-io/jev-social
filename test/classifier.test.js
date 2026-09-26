@@ -106,9 +106,185 @@ test("classifySearch preserves Jev unsupported decisions", async () => {
       };
     },
   };
-  const result = await classifySearch({ goal: "send a message", client });
+  const result = await classifySearch({ goal: "write a poem about social media", client });
   assert.equal(result.platform, null);
   assert.equal(result.route, "unsupported");
+});
+
+test("classifySearch constrains auto routing when the goal names one available platform", async () => {
+  let request;
+  const client = {
+    async systemOne(value) {
+      request = value;
+      return {
+        model: "laya:en",
+        answers: {
+          route: {
+            type: "choice",
+            choice: "tiktok_search",
+            confidence: 0.61,
+          },
+        },
+      };
+    },
+  };
+
+  const result = await classifySearch({
+    goal: "Research viral camera reviews on TikTok",
+    requestedPlatform: "auto",
+    client,
+  });
+
+  assert.equal(request.state.requested_platform, "tiktok");
+  assert.equal(result.platform, "tiktok");
+});
+
+test("classifySearch leaves ambiguous, topical, and negated platform mentions for the decision provider", async () => {
+  const goals = [
+    "Compare creator reactions on TikTok and Instagram",
+    "Search LinkedIn for posts about TikTok",
+    "Do not use TikTok; find emerging creators",
+    "I do not want you to search TikTok; find emerging creators",
+    "Do not ever research LinkedIn; find founders",
+    "Research TikTok trends on Instagram",
+  ];
+  const expectedRequestedPlatforms = ["auto", "linkedin", "auto", "auto", "auto", "instagram"];
+
+  for (const [index, goal] of goals.entries()) {
+    let request;
+    const client = {
+      async systemOne(value) {
+        request = value;
+        return {
+          answers: {
+            route: {
+              type: "choice",
+              choice: "unsupported",
+              confidence: 0.82,
+            },
+          },
+        };
+      },
+    };
+
+    const result = await classifySearch({
+      goal,
+      requestedPlatform: "auto",
+      client,
+    });
+
+    assert.equal(request.state.requested_platform, expectedRequestedPlatforms[index], goal);
+    assert.equal(result.platform, null);
+  }
+});
+
+test("a named but unavailable platform fails before any model call", async () => {
+  let called = false;
+  await assert.rejects(
+    classifySearch({
+      goal: "Find AI founders on LinkedIn",
+      requestedPlatform: "auto",
+      capabilities: { instagram: true, tiktok: true, linkedin: false },
+      client: {
+        async systemOne() {
+          called = true;
+          throw new Error("must not run");
+        },
+      },
+    }),
+    (error) => error.code === "SOCAI_CAPABILITY_MISSING" && error.details?.platform === "linkedin",
+  );
+  assert.equal(called, false);
+});
+
+test("classifySearch rejects clear account-changing requests before any model call", async () => {
+  for (const goal of [
+    "Post a promotional comment on Instagram",
+    "Post photos on Instagram",
+    "Publish to Instagram",
+    "Please like this TikTok video",
+    "Follow creators on TikTok",
+    "Find the creator, then follow their account",
+    "I want you to message this LinkedIn user",
+    "Delete my Instagram post",
+    "Repost this TikTok video",
+    "Connect with this person on LinkedIn",
+    "Update my Instagram bio",
+    "Find the creator, then send them a DM",
+    "Find the creator and leave a comment on their latest post",
+    "Could you give this post a like?",
+    "Please create a post on Instagram",
+    "请帮我关注这个 Instagram 创作者",
+  ]) {
+    let called = false;
+    await assert.rejects(
+      classifySearch({
+        goal,
+        client: {
+          async systemOne() {
+            called = true;
+            throw new Error("must not run");
+          },
+        },
+      }),
+      (error) => error.code === "UNSUPPORTED_TASK",
+      goal,
+    );
+    assert.equal(called, false, goal);
+  }
+});
+
+test("read-only post and comment nouns do not trigger the mutation guard", async () => {
+  for (const goal of [
+    "Find posts and comments about AI creators on Instagram",
+    "Post performance and comment sentiment on Instagram",
+    "Follow the discussion about AI creators on Instagram",
+    "Follow creators' posting frequency on Instagram",
+    "Research posts about how to publish on Instagram",
+    "Like analytics reports, research creators on Instagram",
+    "Post reach and engagement metrics on Instagram",
+    "Post impressions by creator on Instagram",
+  ]) {
+    let called = false;
+    const result = await classifySearch({
+      goal,
+      client: {
+        async systemOne() {
+          called = true;
+          return {
+            answers: {
+              route: {
+                type: "choice",
+                choice: "instagram_search",
+                confidence: 0.9,
+              },
+            },
+          };
+        },
+      },
+    });
+
+    assert.equal(called, true, goal);
+    assert.equal(result.platform, "instagram");
+  }
+});
+
+test("an unsupported decision is preserved even when a positive platform hint exists", async () => {
+  const result = await classifySearch({
+    goal: "Research Instagram in a way the provider cannot support",
+    client: {
+      async systemOne() {
+        return {
+          answers: {
+            route: { type: "choice", choice: "unsupported", confidence: 0.91 },
+          },
+        };
+      },
+    },
+  });
+
+  assert.equal(result.route, "unsupported");
+  assert.equal(result.platform, null);
 });
 
 test("classifySearch never lets Jev override an explicit platform", async () => {
