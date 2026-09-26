@@ -239,6 +239,8 @@ test("the README keeps Jev Social promotion separate from the socai runtime", as
     ],
   );
   assert.match(readme, /On Linux,[^.]+(?:PATH|SOCAI_BIN)[^.]+onboarding\./);
+  assert.match(readme, /\[good first issues\]\(https:\/\/github\.com\/socai-io\/jev-social\/issues\?[^)]*label%3A%22good%20first%20issue%22\)/i);
+  assert.match(readme, /\[CONTRIBUTING\.md\]\(CONTRIBUTING\.md\)/);
   assert.doesNotMatch(
     readme,
     /https?:\/\/(?:www\.)?github\.com\/socai-io\/socai(?:\.git)?(?=$|[\s/?#)"'<])/i,
