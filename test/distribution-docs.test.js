@@ -212,6 +212,10 @@ test("the Pages landing exposes current structured metadata and recorded evidenc
   ]) {
     assert.match(landing, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
+  assert.match(
+    landing,
+    /<a class="text-link" href="https:\/\/skills\.sh\/socai-io\/jev-social\/jev-social" rel="noreferrer">Browse the Agent Skill on skills\.sh ↗<\/a>/,
+  );
   assert.match(landing, /individual local observations, not a benchmark/i);
   assert.match(landing, /\.\/local-system-one\//);
   assert.match(landing, /\.\/social-research\//);
