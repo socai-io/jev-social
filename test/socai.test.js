@@ -114,6 +114,18 @@ test("runSocaiSearch capability-checks and parses the real child process", async
     mock,
     `#!/usr/bin/env node
 const args = process.argv.slice(2);
+const credentialsPresent = ["OPENROUTER_API_KEY", "TYPESAFE_API_KEY", "SOCAI_API_KEY", "SOCAI_SESSION_TOKEN"]
+  .filter((name) => Object.hasOwn(process.env, name));
+const privacyControls = {
+  telemetry: process.env.SOCAI_TELEMETRY || null,
+  queryText: process.env.SOCAI_TELEMETRY_QUERY_TEXT || null,
+  chatText: process.env.SOCAI_TELEMETRY_CHAT_TEXT || null,
+};
+if (privacyControls.telemetry !== "0" || privacyControls.queryText !== "off" ||
+    privacyControls.chatText !== "false" || credentialsPresent.length) {
+  console.error("unsafe child environment");
+  process.exit(9);
+}
 if (args.length === 1 && args[0] === "--help") {
   console.log("socai mock");
 } else if (args[0] === "tiktok" && args[1] === "--help") {
@@ -122,7 +134,7 @@ if (args.length === 1 && args[0] === "--help") {
   process.exitCode = 2;
 } else if (args[0] === "tiktok" && args[1] === "search") {
   console.error("reading TikTok");
-  console.log(JSON.stringify({ results: [{ title: args[2] }], received: args, leakedKey: process.env.OPENROUTER_API_KEY || null }));
+  console.log(JSON.stringify({ results: [{ title: args[2] }], received: args, credentialsPresent, privacyControls }));
 } else {
   process.exitCode = 2;
 }
@@ -132,7 +144,17 @@ if (args.length === 1 && args[0] === "--help") {
   await chmod(mock, 0o755);
 
   try {
-    const env = { ...process.env, SOCAI_BIN: mock, OPENROUTER_API_KEY: String(101) };
+    const env = {
+      ...process.env,
+      SOCAI_BIN: mock,
+      SOCAI_TELEMETRY: "0",
+      SOCAI_TELEMETRY_QUERY_TEXT: "off",
+      SOCAI_TELEMETRY_CHAT_TEXT: "false",
+      OPENROUTER_API_KEY: String(101),
+      TYPESAFE_API_KEY: String(102),
+      SOCAI_API_KEY: String(103),
+      SOCAI_SESSION_TOKEN: String(104),
+    };
     const status = await probeSocai({}, env);
     assert.equal(status.installed, true);
     assert.deepEqual(status.capabilities, { instagram: false, tiktok: true, linkedin: false });
@@ -147,7 +169,12 @@ if (args.length === 1 && args[0] === "--help") {
     });
     assert.equal(result.exitCode, 0);
     assert.equal(result.data.results[0].title, "wearable AI");
-    assert.equal(result.data.leakedKey, null);
+    assert.deepEqual(result.data.credentialsPresent, []);
+    assert.deepEqual(result.data.privacyControls, {
+      telemetry: "0",
+      queryText: "off",
+      chatText: "false",
+    });
     assert.match(result.command, /tiktok search/);
     assert.match(progress.join(""), /reading TikTok/);
 

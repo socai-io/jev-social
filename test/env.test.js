@@ -9,13 +9,19 @@ test("parseEnv reads the lowercase OpenRouter key format without evaluating shel
   });
 });
 
-test("project .env values honor the report privacy opt-out", () => {
+test("project .env values honor report and socai telemetry privacy controls", () => {
   const env = {};
   mergeLocalEnv(env, {
     OPENROUTER_REPORT_MODEL: "off",
+    SOCAI_TELEMETRY: "0",
+    SOCAI_TELEMETRY_QUERY_TEXT: "off",
+    SOCAI_TELEMETRY_CHAT_TEXT: "false",
     UNRELATED_SECRET: String(102),
   });
 
   assert.equal(env.OPENROUTER_REPORT_MODEL, "off");
+  assert.equal(env.SOCAI_TELEMETRY, "0");
+  assert.equal(env.SOCAI_TELEMETRY_QUERY_TEXT, "off");
+  assert.equal(env.SOCAI_TELEMETRY_CHAT_TEXT, "false");
   assert.equal(env.UNRELATED_SECRET, undefined);
 });

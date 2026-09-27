@@ -19,12 +19,30 @@ test("childEnvironment forwards socai/runtime settings but strips API credential
     PATH: "/bin",
     HOME: "/tmp/home",
     SOCAI_HOME: "/tmp/socai",
+    SOCAI_TELEMETRY: "0",
+    SOCAI_TELEMETRY_QUERY_TEXT: "off",
+    SOCAI_TELEMETRY_CHAT_TEXT: "false",
     SOCAI_API_KEY: String(1),
     SOCAI_SESSION_TOKEN: String(2),
     TYPESAFE_API_KEY: String(3),
     OPENROUTER_API_KEY: String(4),
   });
-  assert.deepEqual(value, { PATH: "/bin", HOME: "/tmp/home", SOCAI_HOME: "/tmp/socai" });
+  assert.deepEqual(value, {
+    PATH: "/bin",
+    HOME: "/tmp/home",
+    SOCAI_HOME: "/tmp/socai",
+    SOCAI_TELEMETRY: "0",
+    SOCAI_TELEMETRY_QUERY_TEXT: "off",
+    SOCAI_TELEMETRY_CHAT_TEXT: "false",
+  });
+});
+
+test("childEnvironment disables socai telemetry unless the caller explicitly opts in", () => {
+  for (const value of [undefined, "", " ", "garbage", "0", "off", "true"]) {
+    const source = value === undefined ? { PATH: "/bin" } : { PATH: "/bin", SOCAI_TELEMETRY: value };
+    assert.deepEqual(childEnvironment(source), { PATH: "/bin", SOCAI_TELEMETRY: "0" });
+  }
+  assert.equal(childEnvironment({ SOCAI_TELEMETRY: "1" }).SOCAI_TELEMETRY, "1");
 });
 
 test("runProcess force-kills a child that ignores SIGTERM", async () => {

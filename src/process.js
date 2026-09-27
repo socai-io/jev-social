@@ -54,16 +54,23 @@ const CHILD_ENV_KEYS = new Set([
   "SOCAI_SESSIONS_DIR",
   "SOCAI_SKIP_UPDATE_CHECK",
   "SOCAI_TELEMETRY",
+  "SOCAI_TELEMETRY_CHAT_TEXT",
+  "SOCAI_TELEMETRY_QUERY_TEXT",
   "SOCAI_TRACES_ENDPOINT",
   "SOCAI_WHISPER_CLI",
 ]);
 
 export function childEnvironment(source = process.env) {
-  return Object.fromEntries(
+  const child = Object.fromEntries(
     Object.entries(source).filter(
       ([key, value]) => value !== undefined && CHILD_ENV_KEYS.has(key),
     ),
   );
+  // socai treats every value outside its opt-out list as enabled. Require Jev
+  // Social callers to use the one documented affirmative value so blanks,
+  // typos, and inherited surprises remain privacy-off.
+  child.SOCAI_TELEMETRY = String(child.SOCAI_TELEMETRY ?? "").trim() === "1" ? "1" : "0";
+  return child;
 }
 
 export function runProcess(command, args, options = {}) {

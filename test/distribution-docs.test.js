@@ -300,7 +300,10 @@ test("the local UI keeps project links scoped to Jev Social", async () => {
 });
 
 test("the README exposes the privacy and local-data boundaries", async () => {
-  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const [readme, security] = await Promise.all([
+    readFile(new URL("../README.md", import.meta.url), "utf8"),
+    readFile(new URL("../SECURITY.md", import.meta.url), "utf8"),
+  ]);
   const privacySection = readme.match(
     /## Privacy and local data\r?\n([\s\S]*?)(?=\r?\n## )/,
   );
@@ -317,8 +320,18 @@ test("the README exposes the privacy and local-data boundaries", async () => {
   assert.match(privacySection[1], /does not read or copy the browser cookie store directly/i);
   assert.match(privacySection[1], /user input and visible social content are untrusted/i);
   assert.match(privacySection[1], /OPENROUTER_REPORT_MODEL=off/);
+  assert.match(privacySection[1], /SOCAI_TELEMETRY=0/);
   assert.match(privacySection[1], /no automatic cleanup schedule/i);
   assert.match(privacySection[1], /only when the research goal explicitly requests/i);
+  assert.match(security, /github\.com\/socai-io\/socai\/blob\/v0\.6\.1\/docs\/telemetry-schema\.md/);
+  assert.match(security, /SOCAI_TELEMETRY_QUERY_TEXT=off/);
+  assert.match(security, /SOCAI_TELEMETRY_CHAT_TEXT=off/);
+  assert.match(security, /third-party observability provider Axiom/i);
+  assert.match(security, /full phone number/i);
+  assert.match(security, /does not remove those targets or other metadata/i);
+  assert.match(security, /pattern-based secret scrubbing/i);
+  assert.match(security, /does not pin the installed socai executable/i);
+  assert.match(security, /does not specify a server-side deletion or retention period/i);
 });
 
 test("the social research guide is shipped with exact platform and safety boundaries", async () => {
