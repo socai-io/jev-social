@@ -106,6 +106,7 @@ button:focus-visible,
 .result-view { min-height: 0; display: flex; flex-direction: column; background: #fff; }
 .result-toolbar { flex: 0 0 76px; display: grid; grid-template-columns: 180px 1fr 180px; align-items: center; gap: 20px; padding: 0 22px; border-bottom: 1px solid var(--ink); background: var(--ice); }
 .result-heading { min-width: 0; text-align: center; }
+#result-title:focus { outline: 2px solid var(--ink); outline-offset: 3px; box-shadow: 0 0 0 6px var(--pink); }
 .result-heading h2 { margin: 5px 0 0; overflow: hidden; font: 700 15px/1.2 var(--mono); letter-spacing: -.03em; text-overflow: ellipsis; white-space: nowrap; }
 .back-button { justify-self: start; border: 0; padding: 8px 0; background: transparent; font: 700 11px var(--mono); }
 .time-readout { justify-self: end; display: grid; text-align: right; }

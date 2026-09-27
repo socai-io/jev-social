@@ -12,6 +12,7 @@ import {
 import { bindPromptButtons, platformLabel, updatePromptButtons } from "./prompts.js";
 import { parseRunRoute, resultHash } from "./run-route.js";
 import { deriveStatusView } from "./status.js";
+import { revealWithInitialFocus } from "./view-focus.js";
 
 const $ = (selector) => document.querySelector(selector);
 const elements = {
@@ -168,7 +169,7 @@ function updateTimer() {
 
 function showResultView({ push = false } = {}) {
   elements.searchView.classList.add("hidden");
-  elements.resultView.classList.remove("hidden");
+  revealWithInitialFocus(elements.resultView, $("#result-title"));
   if (push && !parseRunRoute(location.hash)) history.pushState({ view: "results" }, "", `${location.pathname}${location.search}${resultHash()}`);
 }
 
