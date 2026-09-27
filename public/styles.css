@@ -30,6 +30,22 @@ button { cursor: pointer; }
 }
 
 .app-shell { height: 100vh; display: flex; flex-direction: column; }
+.skip-link {
+  position: absolute;
+  z-index: 30;
+  top: 12px;
+  left: 16px;
+  padding: 10px 14px;
+  border: 2px solid var(--ink);
+  background: var(--pink);
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 16px));
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
 .topbar { position: relative; z-index: 20; flex: 0 0 64px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 24px; border-bottom: 1px solid var(--ink); background: rgba(248, 251, 255, .94); backdrop-filter: blur(14px); }
 .brand { display: inline-flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
 .brand strong { font: 800 18px/1 var(--mono); letter-spacing: -.055em; }
