@@ -33,7 +33,7 @@ npx github:socai-io/jev-social#v0.1.10 onboard
 npx github:socai-io/jev-social#v0.1.10
 ```
 
-Onboarding prompts for the OpenRouter key and offers to install the official `socai CLI` when it is missing. The second command opens the loopback-only demo.
+With the default OpenRouter provider, onboarding prompts for the OpenRouter key. On macOS and Windows, onboarding can also install the official `socai CLI` when it is missing. On Linux, install a current `socai CLI` from source first, then put it on `PATH` or set `SOCAI_BIN`. The second command opens the loopback-only demo.
 
 ![Earlier routing-only demo](https://raw.githubusercontent.com/socai-io/jev-social/main/docs/jev-social.gif)
 
@@ -108,7 +108,7 @@ No live benchmark results are published yet. The commands, row contract, timing 
 
 Node 20+, a decision provider (OpenRouter Jev or a loopback Kev server), and a current `socai CLI`.
 
-Fastest OpenRouter path — no repository clone required. Onboarding prompts for the key and offers to install the official socai CLI when it is missing:
+Fastest OpenRouter path — no repository clone required. With the default OpenRouter provider, onboarding prompts for the OpenRouter key. On macOS and Windows, onboarding can also install the official `socai CLI` when it is missing. On Linux, install a current `socai CLI` from source first, then put it on `PATH` or set `SOCAI_BIN`.
 
 ```bash
 npx github:socai-io/jev-social#v0.1.10 onboard

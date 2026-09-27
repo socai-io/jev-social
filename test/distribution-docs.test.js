@@ -67,6 +67,33 @@ function normalizedVisibleText(contents) {
     .trim();
 }
 
+function htmlSectionById(contents, id) {
+  const sectionTags = /<\/?section\b[^>]*>/gi;
+  const idPattern = new RegExp(`\\bid\\s*=\\s*(["'])${id}\\1`, "i");
+  let start = null;
+  let depth = 0;
+  for (const match of contents.matchAll(sectionTags)) {
+    const closing = /^<\//u.test(match[0]);
+    if (start === null) {
+      if (!closing && idPattern.test(match[0])) {
+        start = match.index;
+        depth = 1;
+      }
+      continue;
+    }
+    depth += closing ? -1 : 1;
+    if (depth === 0) return contents.slice(start, match.index + match[0].length);
+  }
+  return "";
+}
+
+function markdownH2Section(contents, title) {
+  const start = contents.indexOf(`## ${title}`);
+  if (start < 0) return "";
+  const next = contents.indexOf("\n## ", start + title.length + 3);
+  return contents.slice(start, next < 0 ? contents.length : next);
+}
+
 function extractKevCommands(contents) {
   const prefixes = [
     "git clone https://github.com/jaredpalmer/kev.git",
@@ -119,6 +146,25 @@ test("public no-clone commands require consent and pin the current release", asy
     for (const source of githubPackages) {
       assert.equal(source, pinnedSource, `${name} must pin the current release`);
     }
+  }
+});
+
+test("top-level quickstarts state the socai installer platform boundary", async () => {
+  const landing = await readFile(new URL("../site/index.html", import.meta.url), "utf8");
+  const readmeTryQuickstart = markdownH2Section(readmeContents, "Try it");
+  const readmeRunQuickstart = markdownH2Section(readmeContents, "Run it");
+  const landingQuickstart = normalizedVisibleText(htmlSectionById(landing, "run"));
+  const expectedBoundary = [
+    "With the default OpenRouter provider, onboarding prompts for the OpenRouter key.",
+    "On macOS and Windows, onboarding can also install the official socai CLI when it is missing.",
+    "On Linux, install a current socai CLI from source first, then put it on PATH or set SOCAI_BIN.",
+  ].join(" ");
+
+  for (const quickstart of [readmeTryQuickstart, readmeRunQuickstart, landingQuickstart]) {
+    assert.ok(
+      quickstart.replaceAll("`", "").includes(expectedBoundary),
+      "each top-level quickstart must state the exact provider and installer boundary",
+    );
   }
 });
 
