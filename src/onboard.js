@@ -11,6 +11,23 @@ const INSTALLERS = {
   darwin: "https://github.com/socai-io/socai/releases/latest/download/install.sh",
   win32: "https://github.com/socai-io/socai/releases/latest/download/install.ps1",
 };
+export function parseYesNoAnswer(answer, defaultYes) {
+  const normalized = String(answer ?? "").trim().toLowerCase();
+  if (!normalized) return defaultYes;
+  return normalized === "y" || normalized === "yes";
+}
+
+export async function decideSocaiInstall({
+  installed,
+  install = false,
+  skipInstall = false,
+  interactive = false,
+  promptInstall,
+}) {
+  if (install) return true;
+  if (installed || skipInstall || !interactive) return false;
+  return Boolean(await promptInstall?.());
+}
 
 export async function verifyOpenRouterApiKey(apiKey) {
   if (!apiKey?.trim()) {

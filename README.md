@@ -33,7 +33,7 @@ npx github:socai-io/jev-social#v0.1.13 onboard
 npx github:socai-io/jev-social#v0.1.13
 ```
 
-With the default OpenRouter provider, onboarding prompts for the OpenRouter key. On macOS and Windows, onboarding can also install the official `socai CLI` when it is missing. On Linux, install a current `socai CLI` from source first, then put it on `PATH` or set `SOCAI_BIN`. The second command opens the loopback-only demo.
+With the default OpenRouter provider, onboarding prompts for the OpenRouter key. On macOS and Windows, onboarding can also install the official `socai CLI` when it is missing. On Linux, install a current `socai CLI` from source first, then put it on `PATH` or set `SOCAI_BIN`. Non-interactive or unattended onboarding never installs it implicitly; pass `--install` explicitly to allow installation. The second command opens the loopback-only demo.
 
 ![Earlier routing-only demo](https://raw.githubusercontent.com/socai-io/jev-social/main/docs/jev-social.gif)
 
@@ -108,7 +108,7 @@ No live benchmark results are published yet. The commands, row contract, timing 
 
 Node 22+, a decision provider (OpenRouter Jev or a loopback Kev server), and a current `socai CLI`.
 
-Fastest OpenRouter path — no repository clone required. With the default OpenRouter provider, onboarding prompts for the OpenRouter key. On macOS and Windows, onboarding can also install the official `socai CLI` when it is missing. On Linux, install a current `socai CLI` from source first, then put it on `PATH` or set `SOCAI_BIN`.
+Fastest OpenRouter path — no repository clone required. With the default OpenRouter provider, onboarding prompts for the OpenRouter key. On macOS and Windows, onboarding can also install the official `socai CLI` when it is missing. On Linux, install a current `socai CLI` from source first, then put it on `PATH` or set `SOCAI_BIN`. Non-interactive or unattended onboarding requires an explicit `--install` flag to install it.
 
 ```bash
 npx github:socai-io/jev-social#v0.1.13 onboard
@@ -151,7 +151,7 @@ The released Jev Social Skill is also available in [Build with Claude](https://g
 
 To work from a source checkout instead:
 
-On macOS and Windows, onboarding can install a missing `socai CLI`. On Linux, install a current `socai CLI` separately, then put it on `PATH` or set `SOCAI_BIN` before onboarding.
+On macOS and Windows, interactive onboarding can offer to install a missing `socai CLI`; non-interactive or unattended installation requires an explicit `--install` flag. On Linux, install a current `socai CLI` separately, then put it on `PATH` or set `SOCAI_BIN` before onboarding.
 
 ```bash
 git clone https://github.com/socai-io/jev-social.git

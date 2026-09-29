@@ -7,7 +7,7 @@ import { runSearch } from "../src/app.js";
 import { getConfigPath, readConfig, resolveApiKey } from "../src/config.js";
 import { resolveDecisionProvider } from "../src/decision-provider.js";
 import { loadLocalEnv } from "../src/env.js";
-import { saveOnboarding } from "../src/onboard.js";
+import { decideSocaiInstall, parseYesNoAnswer, saveOnboarding } from "../src/onboard.js";
 import { probeSocai } from "../src/socai.js";
 import { startServer } from "../src/server.js";
 
@@ -29,7 +29,7 @@ Search options:
 Configuration (normally auto-loaded from .env):
   --api-key <key>                      OpenRouter API key (prompt is safer)
   --socai-bin <path>                   socai executable override
-  --install                            Install/reinstall official socai CLI
+  --install                            Install/reinstall official socai CLI (required for unattended installs)
   --skip-install                       Do not offer CLI installation
   --no-verify                          Save API key without a network check
 
@@ -117,10 +117,14 @@ async function onboard(flags) {
 
   const proposed = { ...current, ...(flags.socaiBin ? { socaiBin: flags.socaiBin } : {}) };
   const before = await probeSocai(proposed);
-  let installCli = Boolean(flags.install);
-  if (!before.installed && !flags.skipInstall && !flags.install) {
-    installCli = await promptYesNo("socai CLI was not found. Install the official release now?", true);
-  }
+  const installCli = await decideSocaiInstall({
+    installed: before.installed,
+    install: Boolean(flags.install),
+    skipInstall: Boolean(flags.skipInstall),
+    interactive: Boolean(stdin.isTTY),
+    promptInstall: () =>
+      promptYesNo("socai CLI was not found. Install the official release now?", true),
+  });
 
   console.log("Checking setup…");
   const result = await saveOnboarding({
@@ -178,12 +182,11 @@ function parseArgs(args) {
 }
 
 async function promptYesNo(question, defaultYes) {
-  if (!stdin.isTTY) return defaultYes;
+  if (!stdin.isTTY) return false;
   const rl = readline.createInterface({ input: stdin, output: stdout });
   try {
-    const answer = (await rl.question(`${question} ${defaultYes ? "[Y/n]" : "[y/N]"} `)).trim().toLowerCase();
-    if (!answer) return defaultYes;
-    return answer === "y" || answer === "yes";
+    const answer = await rl.question(`${question} ${defaultYes ? "[Y/n]" : "[y/N]"} `);
+    return parseYesNoAnswer(answer, defaultYes);
   } finally {
     rl.close();
   }
