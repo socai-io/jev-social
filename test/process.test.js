@@ -66,22 +66,31 @@ test("runProcess force-kills output that exceeds the configured limit", async ()
 });
 
 test("runProcess kills resistant descendants after the group leader exits", async () => {
+  if (process.platform === "win32") return;
+  const controller = new AbortController();
+  let abortStartedAt;
   const parent = `
     const { spawn } = require("node:child_process");
-    spawn(process.execPath, ["-e", "process.on('SIGTERM',()=>{}); console.log('ready'); setInterval(()=>{},1000)"], {
+    spawn(process.execPath, ["-e", "process.on('SIGTERM',()=>{}); console.error('ready'); setInterval(()=>{},1000)"], {
       stdio: ["ignore", "inherit", "inherit"]
     });
     process.on("SIGTERM", () => process.exit(0));
     setInterval(() => {}, 1000);
   `;
-  const startedAt = Date.now();
   const result = await runProcess(process.execPath, ["-e", parent], {
-    timeoutMs: 200,
+    signal: controller.signal,
+    timeoutMs: 5_000,
     killGraceMs: 80,
+    onStderr(line) {
+      if (line !== "ready" || abortStartedAt) return;
+      abortStartedAt = Date.now();
+      controller.abort();
+    },
   });
-  assert.equal(result.timedOut, true);
-  assert.match(result.stdout, /ready/);
-  assert.ok(Date.now() - startedAt < 2_000, "descendant should be killed with the original process group");
+  assert.equal(result.aborted, true);
+  assert.equal(result.timedOut, false);
+  assert.match(result.stderr, /ready/);
+  assert.ok(Date.now() - abortStartedAt < 2_000, "descendant should be killed with the original process group");
 });
 
 test("runProcess frames UTF-8 stderr progress by complete lines", async () => {
