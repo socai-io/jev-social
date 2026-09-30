@@ -647,7 +647,9 @@ function showDetail(item, title) {
   const media = element("div", "detail-media");
   renderMediaPreview(media, item, { showBadge: false });
   const copy = element("div", "detail-copy");
-  copy.append(element("h3", "", title));
+  const heading = element("h3", "", title);
+  heading.id = "detail-title";
+  copy.append(heading);
   const description = firstString(item, ["description", "caption", "text", "title"]);
   if (description) copy.append(element("p", "", description));
   const comments = item.top_comments || item.comments || item.socai_detail?.entity?.top_comments;
