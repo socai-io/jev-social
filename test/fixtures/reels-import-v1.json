@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "fixture-collection-1",
+  "creator": "Example",
+  "createdAt": "2026-09-03T12:00:00Z",
+  "status": "partial",
+  "posts": [
+    {
+      "id": "item-a",
+      "url": "https://instagram.com/reel/FixtureA/?utm_source=fixture",
+      "caption": "A synthetic marketing example.",
+      "publishedAt": "2026-09-01T12:00:00Z",
+      "capturedAt": "2026-09-03T12:00:00Z",
+      "plays": 1000,
+      "views": null,
+      "likes": 20,
+      "comments": 0,
+      "transcript": {
+        "text": "Build one useful thing. Show your work.",
+        "segments": [
+          {
+            "text": "Build one useful thing.",
+            "start": 0,
+            "end": 2.5
+          },
+          {
+            "text": "Show your work.",
+            "start": 2.5,
+            "end": 5
+          }
+        ]
+      },
+      "analysis": {
+        "labels": {
+          "topic": {
+            "value": "marketing",
+            "confidence": 0.9
+          },
+          "opening": {
+            "value": "question",
+            "confidence": 0.9
+          },
+          "mechanism": {
+            "value": "curiosity",
+            "confidence": 0.9
+          },
+          "structure": {
+            "value": "steps",
+            "confidence": 0.9
+          },
+          "evidence": {
+            "value": "example",
+            "confidence": 0.9
+          },
+          "emotion": {
+            "value": "aspiration",
+            "confidence": 0.9
+          },
+          "specificity": {
+            "value": "none",
+            "confidence": 0.9
+          },
+          "cta": {
+            "value": "none",
+            "confidence": 0.9
+          }
+        },
+        "anatomy": [
+          {
+            "text": "Build one useful thing.",
+            "start": 0,
+            "end": 2.5,
+            "value": "hook",
+            "confidence": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "item-b",
+      "url": "https://www.instagram.com/p/FixtureB/",
+      "status": "no_audio",
+      "plays": null,
+      "views": 500
+    },
+    {
+      "id": "item-c",
+      "url": "https://www.instagram.com/p/FixtureC/",
+      "status": "failed",
+      "error": "provider details must not be retained"
+    },
+    {
+      "id": "item-d",
+      "url": "https://www.instagram.com/p/FixtureD/",
+      "transcript": {
+        "text": "Unclassified synthetic speech.",
+        "segments": [
+          {
+            "text": "Unclassified synthetic speech.",
+            "start": null,
+            "end": null
+          }
+        ]
+      },
+      "likes": 0
+    },
+    {
+      "id": "item-e",
+      "url": "https://www.instagram.com/p/FixtureE/",
+      "caption": "A synthetic marketing example.",
+      "publishedAt": "2026-09-01T12:00:00Z",
+      "capturedAt": "2026-09-03T12:00:00Z",
+      "plays": null,
+      "views": 400,
+      "likes": 20,
+      "comments": 0,
+      "transcript": {
+        "text": "Build one useful thing. Show your work.",
+        "segments": [
+          {
+            "text": "Build one useful thing.",
+            "start": 0,
+            "end": 2.5
+          },
+          {
+            "text": "Show your work.",
+            "start": 2.5,
+            "end": 5
+          }
+        ]
+      },
+      "analysis": {
+        "labels": {
+          "topic": {
+            "value": "marketing",
+            "confidence": 0.9
+          },
+          "opening": {
+            "value": "question",
+            "confidence": 0.9
+          },
+          "mechanism": {
+            "value": "unclear",
+            "confidence": 0.3
+          },
+          "structure": {
+            "value": "steps",
+            "confidence": 0.9
+          },
+          "evidence": {
+            "value": "example",
+            "confidence": 0.9
+          },
+          "emotion": {
+            "value": "aspiration",
+            "confidence": 0.9
+          },
+          "specificity": {
+            "value": "none",
+            "confidence": 0.9
+          },
+          "cta": {
+            "value": "none",
+            "confidence": 0.9
+          }
+        },
+        "anatomy": [
+          {
+            "text": "Build one useful thing.",
+            "start": 0,
+            "end": 2.5,
+            "value": "hook",
+            "confidence": 0.9
+          }
+        ]
+      }
+    }
+  ]
+}
