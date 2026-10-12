@@ -1,0 +1,531 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:jev-social:reels:1",
+  "title": "Jev Social normalized Reel collection v1",
+  "description": "Normalized output. Runtime validation additionally enforces distinct IDs, ordered segment times, status/classification consistency and derived review state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "sourceId",
+    "creator",
+    "createdAt",
+    "sourceStatus",
+    "duplicateCount",
+    "posts"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^reels-[a-f0-9]{24}$"
+    },
+    "sourceId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+    },
+    "creator": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.]{1,30}$"
+    },
+    "createdAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "sourceStatus": {
+      "enum": [
+        "complete",
+        "partial",
+        "paused",
+        "interrupted",
+        "failed",
+        "ready",
+        "running",
+        "scraping",
+        "unknown"
+      ]
+    },
+    "duplicateCount": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 999
+    },
+    "posts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/post"
+      }
+    }
+  },
+  "$defs": {
+    "segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "start",
+        "end"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 48000
+        },
+        "start": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "end": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "labels",
+        "anatomy"
+      ],
+      "properties": {
+        "labels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "topic",
+            "opening",
+            "mechanism",
+            "structure",
+            "evidence",
+            "emotion",
+            "specificity",
+            "cta"
+          ],
+          "properties": {
+            "topic": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "business",
+                    "money",
+                    "marketing",
+                    "mindset",
+                    "habits",
+                    "relationships",
+                    "health",
+                    "technology",
+                    "other",
+                    "unclear"
+                  ]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "opening": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "question",
+                    "instruction",
+                    "claim",
+                    "story",
+                    "dialogue",
+                    "unclear"
+                  ]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "mechanism": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "contradiction",
+                    "curiosity",
+                    "result",
+                    "mistake",
+                    "recognition",
+                    "story",
+                    "direct",
+                    "unclear"
+                  ]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "structure": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "story",
+                    "steps",
+                    "problem_solution",
+                    "explanation",
+                    "comparison",
+                    "opinion",
+                    "qa",
+                    "unclear"
+                  ]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "evidence": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "example",
+                    "personal",
+                    "numbers",
+                    "source",
+                    "reasoning",
+                    "none",
+                    "unclear"
+                  ]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "emotion": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "aspiration",
+                    "concern",
+                    "relief",
+                    "surprise",
+                    "amusement",
+                    "neutral",
+                    "unclear"
+                  ]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "specificity": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "none",
+                    "principle",
+                    "action",
+                    "sequence",
+                    "unclear"
+                  ]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "cta": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "value",
+                "confidence"
+              ],
+              "properties": {
+                "value": {
+                  "enum": [
+                    "none",
+                    "follow",
+                    "engage",
+                    "comment",
+                    "visit",
+                    "buy",
+                    "multiple",
+                    "unclear"
+                  ]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          }
+        },
+        "anatomy": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text",
+              "start",
+              "end",
+              "value",
+              "confidence"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "maxLength": 48000
+              },
+              "start": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "end": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "value": {
+                "enum": [
+                  "hook",
+                  "setup",
+                  "problem",
+                  "example",
+                  "advice",
+                  "payoff",
+                  "cta",
+                  "other",
+                  "unclear"
+                ]
+              },
+              "confidence": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "url",
+        "creator",
+        "publishedAt",
+        "capturedAt",
+        "caption",
+        "transcript",
+        "duration",
+        "plays",
+        "views",
+        "likes",
+        "comments",
+        "status",
+        "statusNote",
+        "analysis",
+        "needsReview"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://www\\.instagram\\.com/p/[A-Za-z0-9_-]+/$"
+        },
+        "creator": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.]{1,30}$"
+        },
+        "publishedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "capturedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "caption": {
+          "type": "string",
+          "maxLength": 12000
+        },
+        "transcript": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "segments"
+          ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "maxLength": 48000
+            },
+            "segments": {
+              "type": "array",
+              "maxItems": 200,
+              "items": {
+                "$ref": "#/$defs/segment"
+              }
+            }
+          }
+        },
+        "duration": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "plays": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "views": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "likes": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "comments": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "status": {
+          "enum": [
+            "classified",
+            "unclassified",
+            "excluded",
+            "error"
+          ]
+        },
+        "statusNote": {
+          "enum": [
+            "",
+            "No audio track",
+            "Excluded by source",
+            "Source processing failed"
+          ]
+        },
+        "analysis": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/analysis"
+            }
+          ]
+        },
+        "needsReview": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

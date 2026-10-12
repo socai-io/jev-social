@@ -15,6 +15,8 @@ import { loadLocalEnv } from "./env.js";
 import { saveOnboarding } from "./onboard.js";
 import { listRuns, markInterruptedRuns, readRun } from "./runs.js";
 import { probeSocai, unknownSocaiReadiness } from "./socai.js";
+import { importReels, listReels, readReels } from "./reels.js";
+import { MAX_REELS_BYTES } from "./reels-contract.js";
 
 const PUBLIC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
 const MEDIA_TTL_MS = 60 * 60_000;
@@ -157,6 +159,19 @@ async function handleRequest(request, response, env, mediaRegistry) {
       const body = await readJson(request);
       validateSearchBody(body);
       return streamSearch(request, response, body, env, mediaRegistry);
+    }
+    if (request.method === "POST" && url.pathname === "/api/reels") {
+      assertSameOrigin(request);
+      return sendJson(response, 201, await importReels(await readJson(request, MAX_REELS_BYTES), env));
+    }
+    if (request.method === "GET" && url.pathname === "/api/reels") {
+      return sendJson(response, 200, { collections: await listReels(env) });
+    }
+    const reelsMatch = request.method === "GET" && url.pathname.match(/^\/api\/reels\/(reels-[a-f0-9]{24})$/);
+    if (reelsMatch) {
+      const collection = await readReels(reelsMatch[1], env);
+      return collection ? sendJson(response, 200, collection)
+        : sendJson(response, 404, { error: { code: "REELS_NOT_FOUND", message: "Collection not found." } });
     }
     if (request.method === "GET" && url.pathname === "/api/runs") {
       return sendJson(response, 200, { runs: await listRuns(env) });
@@ -390,7 +405,7 @@ function assertSameOrigin(request) {
   }
 }
 
-async function readJson(request) {
+async function readJson(request, maxBytes = 1_000_000) {
   const contentType = request.headers["content-type"]?.split(";", 1)[0].trim().toLowerCase();
   if (contentType !== "application/json") {
     throw httpError(415, "UNSUPPORTED_MEDIA_TYPE", "Content-Type must be application/json.");
@@ -399,7 +414,7 @@ async function readJson(request) {
   let size = 0;
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > 1_000_000) {
+    if (size > maxBytes) {
       throw httpError(413, "BODY_TOO_LARGE", "Request body is too large.");
     }
     chunks.push(chunk);
