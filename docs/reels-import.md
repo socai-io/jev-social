@@ -25,10 +25,12 @@ adapter step; the importer does not guess future producer formats.
 
 Each post accepts:
 
-- `creator`, `caption`, ISO `publishedAt`, `capturedAt` (or `scrapedAt`),
-  `duration`, `plays`, `views`, `likes`, and `comments`.
+- `creator`, `caption`, RFC 3339 `publishedAt`, `capturedAt` (or `scrapedAt`)
+  with an explicit timezone, `duration`, `plays`, `views`, `likes`, and `comments`.
 - `transcript: { text, segments: [{ text, start, end }] }`. Times are seconds;
-  missing times stay `null`. Negative, nonnumeric or reversed times are rejected.
+  every segment requires string text, missing times stay `null`, and known start
+  times must be in nondecreasing order. Negative, nonnumeric or reversed times
+  are rejected.
 - `analysis: { labels, anatomy }`. Labels use the eight dimensions and enums
   in `src/reels-contract.js`; every label has a confidence in `[0, 1]`. Anatomy
   segments add `value` (script role) and nullable `confidence` to a timed segment.

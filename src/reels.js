@@ -12,8 +12,18 @@ const stableId = (value) => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9
 const libraryId = (value) => typeof value === "string" && /^reels-[a-f0-9]{24}$/.test(value);
 const invalid = (message) => new AppError(message, { code: "INVALID_REELS_IMPORT" });
 const metric = (value) => knownMetric(value) ? value : null;
-const date = (value) => typeof value === "string" && /^\d{4}-\d\d-\d\dT/.test(value) && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
+const datePattern = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[Tt](?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:[Zz]|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
 const creatorName = (value) => typeof value === "string" && /^[a-zA-Z0-9_.]{1,30}$/.test(value);
+
+function date(value) {
+  const match = typeof value === "string" ? datePattern.exec(value) : null;
+  if (!match) return null;
+  const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const timestamp = day <= days[month - 1] ? Date.parse(value) : NaN;
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
+}
 
 function redactPaths(value) {
   // Drop the whole line when a local path is detected, including paths with
@@ -49,11 +59,14 @@ function source(raw) {
 
 function segments(raw = [], labeled = false) {
   if (!Array.isArray(raw) || raw.length > 200) throw invalid("Invalid Reel transcript segments.");
+  let previousStart = null;
   return raw.map((segment) => {
-    if (!object(segment)) throw invalid("Invalid Reel transcript segment.");
+    if (!object(segment) || typeof segment.text !== "string") throw invalid("Invalid Reel transcript segment.");
     const start = segment.start ?? null, end = segment.end ?? null;
     if ((start !== null && !knownMetric(start)) || (end !== null && !knownMetric(end))
-      || (start !== null && end !== null && end < start)) throw invalid("Invalid Reel segment timestamps.");
+      || (start !== null && end !== null && end < start)
+      || (start !== null && previousStart !== null && start < previousStart)) throw invalid("Invalid Reel segment timestamps.");
+    if (start !== null) previousStart = start;
     const result = { text: text(segment.text, 48000), start, end };
     if (labeled) {
       if (!SCRIPT_ROLES.includes(segment.value)) throw invalid("Invalid Reel script role.");

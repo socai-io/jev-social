@@ -83,6 +83,8 @@ test("malformed envelopes, classifications and timestamps fail closed", () => {
     (raw) => raw.posts[0].transcript.text = "x".repeat(48001),
     (raw) => raw.posts[0].transcript.segments = Array(201).fill({}),
     (raw) => raw.posts[0].transcript.segments = [null],
+    (raw) => raw.posts[0].transcript.segments.reverse(),
+    (raw) => delete raw.posts[0].transcript.segments[0].text,
     (raw) => raw.posts[0].transcript.segments[0].start = -1,
     (raw) => raw.posts[0].transcript.segments[0].start = "0",
     (raw) => raw.posts[0].transcript.segments[0].end = Infinity,
@@ -101,6 +103,19 @@ test("malformed envelopes, classifications and timestamps fail closed", () => {
     assert.throws(() => normalizeReels(raw), { code: "INVALID_REELS_IMPORT" }, change.toString());
   }
   for (const raw of [null, [], "text", 1]) assert.throws(() => normalizeReels(raw), { code: "INVALID_REELS_IMPORT" });
+});
+
+test("dates require an explicit timezone and normalize offsets deterministically", () => {
+  const raw = fixture();
+  raw.createdAt = "2026-09-03T12:00:00";
+  raw.posts[0].publishedAt = "2026-09-01T12:00:00";
+  raw.posts[0].capturedAt = "2026-09-03T12:00:00+08:00";
+  raw.posts[1].publishedAt = "2026-02-31T12:00:00Z";
+  const result = normalizeReels(raw);
+  assert.equal(result.createdAt, null);
+  assert.equal(result.posts[0].publishedAt, null);
+  assert.equal(result.posts[0].capturedAt, "2026-09-03T04:00:00.000Z");
+  assert.equal(result.posts[1].publishedAt, null);
 });
 
 test("only HTTPS Instagram posts are accepted, without credentials or lookalike hosts", () => {
