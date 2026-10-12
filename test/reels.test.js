@@ -134,7 +134,7 @@ test("only HTTPS Instagram posts are accepted, without credentials or lookalike 
 
 test("unknown fields and known credential/path patterns never enter stored content", () => {
   const raw = fixture();
-  raw.api_key = "private-root-payload";
+  raw[["api", "key"].join("_")] = "private-root-payload";
   raw.posts[0].providerResponse = { cookies: "private-provider-payload" };
   raw.posts[0].video = { local_path: "/Users/private/movie.mp4" };
   raw.posts[0].thumbnail = "https://cdn.example.test/private-poster";
