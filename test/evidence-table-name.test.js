@@ -76,3 +76,44 @@ test("the evidence table accessible-name fix does not change visible copy or dyn
     "#table-body must remain intact for dynamic rendering",
   );
 });
+
+test("the evidence table scroll region is named, keyboard-focusable, and visibly outlined", async () => {
+  const section = indexHtml.match(
+    /<section\b[^>]*\bid="evidence-table"[^>]*>([\s\S]*?)<\/section>/i,
+  )?.[1];
+  assert.ok(section, "expected the evidence-table section");
+  const container = section.match(
+    /<div\b[^>]*\bclass="[^"]*\btable-scroll\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+  );
+  assert.ok(container, "expected the table-scroll container");
+  const openingTag = container[0].match(/^<div\b[^>]*>/i)[0];
+  assert.equal(attr(openingTag, "tabindex"), "0");
+  assert.equal(attr(openingTag, "role"), "region");
+  assert.equal(
+    attr(openingTag, "aria-labelledby"),
+    "evidence-table-heading evidence-table-desc",
+  );
+  for (const id of ["evidence-table-heading", "evidence-table-desc"]) {
+    const content = elementById(section, id);
+    assert.ok(content !== null, `missing region label: ${id}`);
+    assert.notEqual(stripMarkup(content).trim(), "", `empty region label: ${id}`);
+  }
+  const tableTag = container[1].match(/<table\b[^>]*>/i)?.[0];
+  assert.ok(tableTag, "the region must contain the evidence table");
+  assert.equal(
+    attr(tableTag, "aria-labelledby"),
+    "evidence-table-heading evidence-table-desc",
+  );
+  assert.match(container[1], /<thead\b[^>]*\bid="table-head"[^>]*>/i);
+  assert.match(container[1], /<tbody\b[^>]*\bid="table-body"[^>]*>/i);
+
+  const css = await readFile(new URL("../public/styles.css", import.meta.url), "utf8");
+  const focusRule = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find(
+    ([, selectors]) => selectors.split(",").some(
+      (selector) => selector.trim() === ".table-scroll:focus-visible",
+    ),
+  );
+  assert.ok(focusRule, "missing keyboard-focus rule for the scroll region");
+  assert.match(focusRule[2], /(?:^|;)\s*outline:\s*[2-9]px solid var\(--ink\)\s*(?:;|$)/);
+  assert.match(focusRule[2], /(?:^|;)\s*outline-offset:\s*2px\s*(?:;|$)/);
+});

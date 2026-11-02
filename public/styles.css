@@ -185,6 +185,7 @@ button:focus-visible,
 
 .data-section { margin-top: 30px; }
 .table-scroll { margin-top: 11px; overflow: auto; border: 1px solid var(--line); }
+.table-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 table { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 11px; }
 th, td { max-width: 330px; padding: 10px 11px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
 th { position: sticky; top: 0; color: #fff; background: var(--ink); font: 700 8px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
